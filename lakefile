@@ -1,0 +1,55 @@
+PROJECT = 'lodbc'
+
+LUA_RUNNER = LUA_EXE
+
+if LUA_VER == '5.2' then
+  LUA_NEED = 'lua52'
+  LUA_DIR  = ENV.LUA_DIR_5_2 or ENV.LUA_DIR
+  LUA_RUNNER  = 'lua52'
+else
+  LUA_NEED = 'lua'
+  LUA_DIR  = ENV.LUA_DIR
+end
+
+INSTALL_DIR = INSTALL_DIR or J(LUA_DIR,'libs',PROJECT)
+
+lodbc = c.shared{PROJECT, 
+  base     = 'src',
+  src      = '*.c',
+  exclude  = 'driverinfo';
+  needs    = {LUA_NEED, 'odbc'},
+  defines  = {'LUAODBC_EXPORTS'},
+  dynamic  = false,
+  strip    = true,
+  incdir   = {J('..', 'include')}
+}
+
+target('build', lodbc)
+
+install = target('install', {
+
+  file.group{odir=J(INSTALL_DIR, 'share'         ); src = lodbc                   };
+  file.group{odir=J(INSTALL_DIR, 'share', PROJECT); src = J('lua', 'lodbc', '*.*')};
+  file.group{odir=J(INSTALL_DIR, 'test'); recurse = true; src = J('test', '*.*')  };
+
+})
+
+target('test', install, function()
+  local file = J(INSTALL_DIR,'test','test.lua')
+  print("run " .. file)
+  if not TESTING then 
+    lake.chdir(J(INSTALL_DIR,'test'))
+    os.execute( LUA_RUNNER .. ' ' .. file )
+    lake.chdir("<")
+  end
+
+  local file = J(INSTALL_DIR,'test','test-luasql.lua')
+  print("run " .. file)
+  if not TESTING then 
+    lake.chdir(J(INSTALL_DIR,'test'))
+    os.execute( LUA_RUNNER .. ' ' .. file )
+    lake.chdir("<")
+  end
+end)
+
+default('build')

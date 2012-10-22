@@ -1,0 +1,8 @@
+require "config"
+require "tools"
+require "01_test_odbc_env"
+require "02_test_odbc_cnn"
+require "03_test_odbc_cnn_info"
+require "04_test_odbc_bind"
+require "05_test_odbc_foreach"
+require "06_test_odbc_more"
