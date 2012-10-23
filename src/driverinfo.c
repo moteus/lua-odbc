@@ -118,9 +118,9 @@ int di_supports_getdata_bound(const drvinfo_data *di){
     return (di->getdataExt_ & SQL_GD_BOUND)?1:0;
 };
 
-#ifdef LUASQL_USE_DRIVERINFO_SUPPORTED_FUNCTIONS
+#ifdef LODBC_USE_DRIVERINFO_SUPPORTED_FUNCTIONS
 int di_supports_function(const drvinfo_data *di, int funcId){
-    return SQL_TRUE == LUASQL_ODBC3_C(
+    return SQL_TRUE == LODBC_ODBC3_C(
         SQL_FUNC_EXISTS(di->supportedFunctions_,funcId),
         di->supportedFunctions_[funcId]
     );

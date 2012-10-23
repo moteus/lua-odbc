@@ -21,7 +21,10 @@
 #include "lua.h"
 #include "lauxlib.h"
 
-#define LODBC_MIN_PAR_BUFSIZE 64
+#ifndef LODBC_MIN_PAR_BUFSIZE 
+#  define LODBC_MIN_PAR_BUFSIZE 64
+#endif
+
 // #define LODBC_FREE_PAR_AT_CLEAR
 
 #define LODBC_PREFIX "Lua-ODBC: "
@@ -44,9 +47,9 @@
 #  endif
 #endif
 
-#define hENV SQL_HANDLE_ENV
+#define hENV  SQL_HANDLE_ENV
 #define hSTMT SQL_HANDLE_STMT
-#define hDBC SQL_HANDLE_DBC
+#define hDBC  SQL_HANDLE_DBC
 
 typedef unsigned char uchar;
 

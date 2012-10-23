@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "lualib.h"
+#include "lerr.h"
 
 const char 
   *LT_STRING  = "string",
@@ -8,47 +9,6 @@ const char
   *LT_BINARY  = "binary";
 
 
-int lodbc_pass(lua_State *L){
-  lua_pushboolean(L, 1);
-  return 1;
-}
-
-int lodbc_push_diagnostics(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle){
-    SQLCHAR State[6];
-    SQLINTEGER NativeError;
-    SQLSMALLINT MsgSize, i;
-    SQLRETURN ret;
-    char Msg[SQL_MAX_MESSAGE_LENGTH];
-    luaL_Buffer b;
-
-    luaL_buffinit(L, &b);
-    i = 1;
-    while (1) {
-        ret = SQLGetDiagRec(type, handle, i, State, &NativeError, Msg, sizeof(Msg), &MsgSize);
-        if (ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) break;
-        if(i > 1) luaL_addchar(&b, '\n');
-        luaL_addlstring(&b, Msg, MsgSize);
-        luaL_addchar(&b, '\n');
-        luaL_addlstring(&b, State, 5);
-        i++;
-    }
-    luaL_pushresult(&b);
-    return 1;
-}
-
-int lodbc_fail(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle){
-  lua_pushnil(L);
-  lodbc_push_diagnostics(L, type, handle);
-  return 2;
-}
-
-int lodbc_faildirect(lua_State *L, const char *err){
-  lua_pushnil(L);
-  lua_pushliteral(L, LODBC_PREFIX);
-  lua_pushstring(L, err);
-  lua_concat(L, 2);
-  return 2;
-}
 
 void lodbc_stackdump( lua_State* L ) {
   int top= lua_gettop(L);

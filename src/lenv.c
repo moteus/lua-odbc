@@ -3,6 +3,7 @@
 #include "l52util.h"
 #include "lenv.h"
 #include "lcnn.h"
+#include "lerr.h"
 #include "luaodbc.h"
 
 LODBC_EXPORT const char *LODBC_ENV = LODBC_PREFIX "Environment";

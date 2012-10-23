@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(LUA_DIR)\include&quot;;..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LUAODBC_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LUAODBC_EXPORTS;LODBC_ERROR_AS_OBJECT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\lerr.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\lodbc.c"
 				>
 			</File>
@@ -230,6 +234,10 @@
 			</File>
 			<File
 				RelativePath="..\src\lenv.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\lerr.h"
 				>
 			</File>
 			<File

@@ -13,12 +13,19 @@ end
 
 INSTALL_DIR = INSTALL_DIR or J(LUA_DIR,'libs',PROJECT)
 
+DEFINES = {
+  'LUAODBC_EXPORTS';
+  'LODBC_ERROR_AS_OBJECT';
+  'LODBC_MIN_PAR_BUFSIZE=64';
+  -- 'LODBC_FREE_PAR_AT_CLEAR';
+}
+
 lodbc = c.shared{PROJECT, 
   base     = 'src',
   src      = '*.c',
   exclude  = 'driverinfo';
   needs    = {LUA_NEED, 'odbc'},
-  defines  = {'LUAODBC_EXPORTS'},
+  defines  = DEFINES,
   dynamic  = false,
   strip    = true,
   incdir   = {J('..', 'include')}

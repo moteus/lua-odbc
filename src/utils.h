@@ -15,17 +15,7 @@ extern const char
 #   define LODBC_ODBC3_C(odbc3_value,old_value) old_value
 #endif
 
-int lodbc_pass(lua_State *L);
-
-int lodbc_push_diagnostics(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle);
-
-int lodbc_fail(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle);
-
-int lodbc_faildirect(lua_State *L, const char *err);
-
-#define LODBC_ALLOCATE_ERROR(L) luaL_error((L), LODBC_PREFIX"memory allocation error.")
-
-#define lodbc_iserror(a) ((a) != SQL_SUCCESS && (a) != SQL_SUCCESS_WITH_INFO) 
+#define lodbc_iserror(a) (!SQL_SUCCEEDED((a)))
 
 int lodbc_is_fail(lua_State *L, int nresult);
 
@@ -64,5 +54,6 @@ int lodbc_set_uint_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle,
 
 int lodbc_set_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, 
     SQLINTEGER optnum, const char* value, size_t len);
+
 
 #endif

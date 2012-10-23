@@ -2,6 +2,7 @@
 #include "lenv.h"
 #include "lcnn.h"
 #include "lstmt.h"
+#include "lerr.h"
 #include "l52util.h"
 #include "luaodbc.h"
 
@@ -36,6 +37,7 @@ static void lodbc_init_lib(lua_State *L, int nup){
   lua_newtable(L); 
 
   lua_newtable(L); // registry
+  lua_pushvalue(L,-1); lodbc_err_initlib (L, 1);
   lua_pushvalue(L,-1); lodbc_env_initlib (L, 1);
   lua_pushvalue(L,-1); lodbc_cnn_initlib (L, 1);
   lua_pushvalue(L,-1); lodbc_stmt_initlib(L, 1);

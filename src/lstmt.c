@@ -3,6 +3,7 @@
 #include "l52util.h"
 #include "lstmt.h"
 #include "lcnn.h"
+#include "lerr.h"
 #include "parlist.h"
 
 LODBC_EXPORT const char *LODBC_STMT = LODBC_PREFIX "Statement";

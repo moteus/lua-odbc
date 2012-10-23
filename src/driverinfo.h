@@ -65,7 +65,7 @@ typedef struct drvinfo_data{
 
     SQLUINTEGER  concurMask_;
 
-#ifdef LUASQL_USE_DRIVERINFO_SUPPORTED_FUNCTIONS
+#ifdef LODBC_USE_DRIVERINFO_SUPPORTED_FUNCTIONS
     SQLUSMALLINT supportedFunctions_[di_supportedFunctionsSize];
 #endif
 
@@ -89,7 +89,7 @@ int di_supports_getdata_anycolumn(const drvinfo_data *di);
 int di_supports_getdata_block(const drvinfo_data *di);
 int di_supports_getdata_bound(const drvinfo_data *di);
 
-#ifdef LUASQL_USE_DRIVERINFO_SUPPORTED_FUNCTIONS
+#ifdef LODBC_USE_DRIVERINFO_SUPPORTED_FUNCTIONS
 int di_supports_function(const drvinfo_data *di, int funcId);
 #endif
 

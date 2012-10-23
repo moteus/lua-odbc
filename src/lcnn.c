@@ -4,6 +4,7 @@
 #include "lcnn.h"
 #include "lenv.h"
 #include "lstmt.h"
+#include "lerr.h"
 #include "driverinfo.h"
 
 LODBC_EXPORT const char *LODBC_CNN = LODBC_PREFIX "Connection";
