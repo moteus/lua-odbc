@@ -632,36 +632,58 @@ static int stmt_foreach_(lua_State *L, lodbc_stmt *stmt, lua_CFunction close_fn)
   }\
   return (N);}
 
+
   signed char alpha_mode = -1,digit_mode = -1; 
   unsigned char autoclose = 1;
-  int top;
+  int ct_idx, top = lua_gettop(L);
 
-  if(lua_isstring(L,2)){// fetch mode
-    const char *opt = lua_tostring(L, 2);
-    alpha_mode = strchr(opt,'a')?1:0;
-    digit_mode = strchr(opt,'n')?1:0;
-    lua_remove(L,2);
-    if (!(alpha_mode || digit_mode)) digit_mode = 1;
+  if(4 == top){ // self, fetch_mode, autoclose, fn
+    if(!lua_isnil(L, 2)){ // fetch_mode
+      const char *opt = luaL_checkstring(L,2);
+      alpha_mode = strchr(opt,'a')?1:0;
+      digit_mode = strchr(opt,'n')?1:0;
+      if (!(alpha_mode || digit_mode)) digit_mode = 1;
+    }
+
+    if(!lua_isnil(L, 3)){ // autoclose
+      autoclose = lua_toboolean(L,3)?1:0;
+    }
+    lua_remove(L,2); // fetch_mode
+    lua_remove(L,2); // autoclose
+  }
+  else if(3 == top){ // self, fetch_mode/autoclose, fn
+    if(!lua_isnil(L, 2)){
+      if(lua_type(L,2) == LUA_TSTRING){
+        const char *opt = lua_tostring(L,2);
+        alpha_mode = strchr(opt,'a')?1:0;
+        digit_mode = strchr(opt,'n')?1:0;
+        if (!(alpha_mode || digit_mode)) digit_mode = 1;
+      }
+      else{
+        autoclose = lua_toboolean(L,2)?1:0;
+      }
+    }
+    lua_remove(L,2); // fetch_mode/autoclose
+  }
+  else if (2 != top ){
+    if (1 == top) return luaL_error(L, LODBC_PREFIX"no function was provided");
+    return luaL_error(L, LODBC_PREFIX"too many arguments");
   }
 
-  if(lua_isboolean(L,2)){// autoclose
-    autoclose = lua_toboolean(L,2)?1:0;
-    lua_remove(L,2);
-  }
+  assert(lua_gettop(L) == 2);                          // stack: cur, func
+  luaL_argcheck(L, lodbc_iscallable(L,-1), top, "must be callable");
 
-  if(!lua_isfunction(L,2))return luaL_error(L, LODBC_PREFIX"no function was provided");
-  if(lua_gettop(L)>2)     return luaL_error(L, LODBC_PREFIX"too many arguments");
-
-  if(alpha_mode >= 0){ // stack: cur, func
+  if(alpha_mode >= 0){                                     // stack: cur, func
     if(alpha_mode){
       lua_rawgeti (L, LODBC_LUA_REGISTRY, stmt->colnames); // stack: cur, func, colnames
-      lua_insert(L,-2); // stack: cur, colnames, func
+      lua_insert(L,-2);                                    // stack: cur, colnames, func
     }
-    lua_newtable(L);                                    // stack: cur, colnames?, func, row
-    lua_rawgeti (L, LODBC_LUA_REGISTRY, stmt->coltypes); // stack: cur, colnames?, func, row, coltypes
-    lua_insert  (L, -3);                                // stack: cur, colnames?, coltypes, func, row
+    lua_newtable(L);                                       // stack: cur, colnames?, func, row
+    lua_rawgeti (L, LODBC_LUA_REGISTRY, stmt->coltypes);   // stack: cur, colnames?, func, row, coltypes
+    lua_insert  (L, -3);                                   // stack: cur, colnames?, coltypes, func, row
 
     top = lua_gettop(L);
+    ct_idx = lua_absindex(L, -3);
     while(1){
       SQLRETURN rc = SQLFetch(stmt->handle);
       int ret,i;
@@ -675,30 +697,30 @@ static int stmt_foreach_(lua_State *L, lodbc_stmt *stmt, lua_CFunction close_fn)
       }
 
       for (i = 1; i <= stmt->numcols; i++) { // fill the row
-        // stack: cur, colnames?, coltypes, func, row
-        if(ret = lodbc_push_column (L, -3, stmt->handle, i))
+                                                    // stack: cur, colnames?, coltypes, func, row
+        if(ret = lodbc_push_column (L, ct_idx, stmt->handle, i))
           FOREACH_RETURN(ret);
-        if (alpha_mode) {           // stack: cur, colnames, coltypes, func, row, value
+        if (alpha_mode) {                                  // stack: cur, colnames, coltypes, func, row, value
           if (digit_mode){
-            lua_pushvalue(L,-1);    // stack: cur, colnames, coltypes, func, row, value, value
-            lua_rawseti (L, -3, i); // stack: cur, colnames, coltypes, func, row, value
+            lua_pushvalue(L,-1);                           // stack: cur, colnames, coltypes, func, row, value, value
+            lua_rawseti (L, -3, i);                        // stack: cur, colnames, coltypes, func, row, value
           }
-          lua_rawgeti(L, -5, i); // stack: cur, colnames, coltypes, func, row, value, colname
-          lua_insert(L, -2);     // stack: cur, colnames, coltypes, func, row, colname, value
-          lua_rawset(L, -3);     /* table[name] = value */
+          lua_rawgeti(L, -5, i);                           // stack: cur, colnames, coltypes, func, row, value, colname
+          lua_insert(L, -2);                               // stack: cur, colnames, coltypes, func, row, colname, value
+          lua_rawset(L, -3);                               /* table[name] = value */
         }
-        else{                    // stack: cur, colnames, coltypes, func, row, value
+        else{                                              // stack: cur, colnames, coltypes, func, row, value
           lua_rawseti (L, -2, i);
         }
       }
 
-      assert(lua_isfunction(L,-2));      // stack: cur, colnames?, coltypes, func, row
-      lua_pushvalue(L, -2);              // stack: cur, colnames?, coltypes, func, row, func
-      lua_pushvalue(L, -2);              // stack: cur, colnames?, coltypes, func, row, func, row
+      assert(lua_isfunction(L,-2));                        // stack: cur, colnames?, coltypes, func, row
+      lua_pushvalue(L, -2);                                // stack: cur, colnames?, coltypes, func, row, func
+      lua_pushvalue(L, -2);                                // stack: cur, colnames?, coltypes, func, row, func, row
       if(autoclose) ret = lua_pcall(L,1,LUA_MULTRET,0);
       else {ret = 0;lua_call(L,1,LUA_MULTRET);}
 
-      // stack: cur, colnames?, coltypes, func, row, ...
+                                                           // stack: cur, colnames?, coltypes, func, row, ...
       assert(lua_gettop(L) >= top);
       if(ret){ // error
         int top = lua_gettop(L);
@@ -707,22 +729,23 @@ static int stmt_foreach_(lua_State *L, lodbc_stmt *stmt, lua_CFunction close_fn)
         lua_settop(L, top);
         return lua_error(L);
       }
-      else if(lua_gettop(L) > top){
-        FOREACH_RETURN(lua_gettop(L) - top);
+      else if(lua_gettop(L) > top){ // func return value
+        ret = lua_gettop(L) - top;
+        FOREACH_RETURN(ret);
       }
     }
   }
   assert((alpha_mode == digit_mode) && (alpha_mode == -1));
-                                                      // stack: cur, func
+                                                       // stack: cur, func
   lua_rawgeti (L, LODBC_LUA_REGISTRY, stmt->coltypes); // stack: cur, func, coltypes
   luaL_checkstack (L, stmt->numcols, LODBC_PREFIX"too many columns");
   top = lua_gettop(L);
+  ct_idx = lua_absindex(L, -1);
   while(1){
     SQLRETURN rc = SQLFetch(stmt->handle);
     int ret,i;
 
     assert(top == lua_gettop(L));
-    assert(top == 3);
 
     if (rc == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){
       FOREACH_RETURN(0);
@@ -730,18 +753,18 @@ static int stmt_foreach_(lua_State *L, lodbc_stmt *stmt, lua_CFunction close_fn)
       FOREACH_RETURN(lodbc_fail(L, hSTMT, stmt->handle));
     }
 
-    lua_pushvalue(L, 2);                              // stack: cur, func, coltypes, func
-    assert(lua_isfunction(L,-1));
+    lua_pushvalue(L, -2);                             // stack: cur, ..., func, coltypes, func
+    assert(lodbc_iscallable(L,-1));
 
     for (i = 1; i <= stmt->numcols; i++){
-      if(ret = lodbc_push_column (L, 3, stmt->handle, i))
-        return ret;
+      if(ret = lodbc_push_column (L, ct_idx, stmt->handle, i))
+        FOREACH_RETURN(ret);
     }
-                                                      // stack: cur, func, coltypes, func, vals[numcols]
+                                                      // stack: cur, ..., func, coltypes, func, vals[numcols]
     if(autoclose) ret = lua_pcall(L,stmt->numcols,LUA_MULTRET,0);
     else {ret = 0;lua_call(L,stmt->numcols,LUA_MULTRET);}
 
-                                                      // stack: cur, func, coltypes, res[?]
+                                                      // stack: cur, ..., func, coltypes, res[?]
     assert(lua_gettop(L) >= top);
     if(ret){ // error
       int top = lua_gettop(L);

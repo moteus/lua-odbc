@@ -55,5 +55,6 @@ int lodbc_set_uint_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle,
 int lodbc_set_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, 
     SQLINTEGER optnum, const char* value, size_t len);
 
+int lodbc_iscallable(lua_State*L, int idx);
 
 #endif

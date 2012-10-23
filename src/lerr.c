@@ -48,6 +48,7 @@ int lodbc_faildirect_obj(lua_State *L, const char *err){
   lua_pushstring(L, err);
   lua_concat(L, 2);
   lua_setfield(L, -2, "message");
+  lua_rawseti(L,-2,1);
   lutil_setmetatablep(L, LODBC_ERR);
   return 2;
 }

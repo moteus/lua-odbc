@@ -355,3 +355,18 @@ int lodbc_set_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle,
     return lodbc_pass(L);
 }
 
+int lodbc_iscallable(lua_State*L, int idx){
+  int ret, top = lua_gettop(L);
+  if(lua_isfunction(L, idx)) return 1;
+  lua_getmetatable(L, idx);
+  if(lua_isnil(L, -1)){
+    lua_pop(L, 1);
+    return 0;
+  }
+  lua_getfield(L, -1, "__call");
+  // ret = lodbc_iscallable(L, -1);
+  ret = lua_isfunction(L, -1);
+  lua_pop(L, 2);
+  assert(top == lua_gettop(L));
+  return ret;
+}
