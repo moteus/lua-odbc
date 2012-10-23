@@ -129,7 +129,6 @@ static const struct luaL_Reg lodbc_err_meta[] = {
 
 void lodbc_err_initlib (lua_State *L, int nup){
 #ifdef LODBC_ERROR_AS_OBJECT
-  int top = lua_gettop(L);int t;
   lutil_newmetatablep(L, LODBC_ERR);
   lua_insert(L, -1 - nup);         /* move mt prior upvalues */
   luaL_setfuncs (L, lodbc_err_meta, nup); /* define methods */
