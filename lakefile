@@ -27,29 +27,26 @@ lodbc = c.shared{PROJECT,
 target('build', lodbc)
 
 install = target('install', {
-
   file.group{odir=J(INSTALL_DIR, 'share'         ); src = lodbc                   };
   file.group{odir=J(INSTALL_DIR, 'share', PROJECT); src = J('lua', 'lodbc', '*.*')};
   file.group{odir=J(INSTALL_DIR, 'test'); recurse = true; src = J('test', '*.*')  };
-
 })
 
-target('test', install, function()
-  local file = J(INSTALL_DIR,'test','test.lua')
+function run(file, cwd)
+  print()
   print("run " .. file)
   if not TESTING then 
-    lake.chdir(J(INSTALL_DIR,'test'))
+    if cwd then lake.chdir(cwd) end
     os.execute( LUA_RUNNER .. ' ' .. file )
-    lake.chdir("<")
+    if cwd then lake.chdir("<") end
+    print()
   end
+end
 
-  local file = J(INSTALL_DIR,'test','test-luasql.lua')
-  print("run " .. file)
-  if not TESTING then 
-    lake.chdir(J(INSTALL_DIR,'test'))
-    os.execute( LUA_RUNNER .. ' ' .. file )
-    lake.chdir("<")
-  end
+target('test', install, function()
+  local test_dir = J(INSTALL_DIR,'test')
+  run(J(test_dir,'test-luasql.lua'), test_dir)
+  run(J(test_dir,'test.lua'), test_dir)
 end)
 
 default('build')
