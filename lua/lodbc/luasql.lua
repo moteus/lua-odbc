@@ -10,6 +10,8 @@ local Environment = {__metatable = "LuaSQL: you're not allowed to get this metat
 local Connection  = {__metatable = "LuaSQL: you're not allowed to get this metatable"} Connection.__index = Connection
 local Cursor      = {__metatable = "LuaSQL: you're not allowed to get this metatable"} Cursor.__index = Cursor
 
+local Environment_new, Connection_new, Cursor_new
+
 function Environment_new()
   local env, err = odbc.environment()
   if not env then return nil, err end
