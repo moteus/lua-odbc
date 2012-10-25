@@ -211,12 +211,12 @@ static int cnn_driverconnect(lua_State *L){
     return lodbc_fail(L, hDBC, hdbc);
   }
 
-  // ret = conn_after_connect(L);
+  lua_pushvalue(L,1);
   lua_pushstring(L,buf);
   free(buf);
 
   conn_after_connect(L);
-  return 1;
+  return 2;
 }
 
 static int cnn_connect (lua_State *L) {

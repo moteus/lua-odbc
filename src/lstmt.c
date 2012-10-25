@@ -103,6 +103,10 @@ static int stmt_destroyed (lua_State *L) {
 
 static int stmt_close(lua_State *L){
   lodbc_stmt *stmt = lodbc_getstmt(L);
+  if(stmt->flags & LODBC_FLAG_DESTROYONCLOSE){
+    return stmt_destroy(L);
+  }
+
   if(stmt->flags & LODBC_FLAG_OPENED){
     SQLRETURN ret = SQLCloseCursor(stmt->handle);
     //! @todo check ret code
@@ -568,10 +572,12 @@ static int stmt_fetch (lua_State *L) {
 
   if (lua_istable (L, 2)) {// stack: cur, row, fetch_mode?
     alpha_mode = 0;
-    if(lua_isstring(L,3)){// fetch mode
-      const char *opt = lua_tostring(L, 3);
-      alpha_mode = strchr(opt,'a')?1:0;
-      digit_mode = strchr(opt,'n')?1:0;
+    if(lua_gettop(L) == 3){
+      if(!lua_isnil(L,3)){
+        const char *opt = luaL_checkstring(L, 3);
+        alpha_mode = strchr(opt,'a')?1:0;
+        digit_mode = strchr(opt,'n')?1:0;
+      }
       lua_remove(L,3);
     }
     if (lua_gettop(L) > 2){
@@ -1026,14 +1032,35 @@ static int stmt_get_escapeprocessing(lua_State *L){
 #undef DEFINE_SET_UINT_ATTR
 
 static int stmt_get_autoclose(lua_State *L) {
-  lodbc_stmt *stmt = lodbc_getstmt(L);
+  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
+  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
+
   lua_pushboolean(L, stmt->autoclose?1:0);
   return 1;
 }
 
 static int stmt_set_autoclose(lua_State *L) {
-  lodbc_stmt *stmt = lodbc_getstmt(L);
+  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
+  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
+
   stmt->autoclose = lua_toboolean(L,2)?1:0;
+  return 1;
+}
+
+static int stmt_set_destroyonclose(lua_State *L){
+  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
+  int flag = lua_toboolean(L, 2);
+  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
+
+  if(flag) stmt->flags |= LODBC_FLAG_DESTROYONCLOSE;
+  else  stmt->flags &= ~LODBC_FLAG_DESTROYONCLOSE;
+  return lodbc_pass(L);
+}
+
+static int stmt_get_destroyonclose (lua_State *L) {
+  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
+  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
+  lua_pushboolean(L, (stmt->flags & LODBC_FLAG_DESTROYONCLOSE));
   return 1;
 }
 
@@ -1134,6 +1161,8 @@ static const struct luaL_Reg lodbc_stmt_methods[] = {
   {"setescapeprocessing", stmt_set_escapeprocessing},
   {"getautoclose",        stmt_get_autoclose},
   {"setautoclose",        stmt_set_autoclose},
+  {"getdestroyonclose",   stmt_get_destroyonclose},
+  {"setdestroyonclose",   stmt_set_destroyonclose},
 
   {NULL, NULL},
 };

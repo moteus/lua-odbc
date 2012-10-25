@@ -62,6 +62,8 @@ typedef unsigned char uchar;
 
 #define LODBC_FLAG_PREPARED         (uchar)0x08 
 
+#define LODBC_FLAG_DESTROYONCLOSE   (uchar)0x10
+
 #define LODBC_LUA_REGISTRY lua_upvalueindex(1)
 
 #endif

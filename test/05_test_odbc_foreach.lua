@@ -59,7 +59,12 @@ end
 
 local sql = "select f1 from " .. TEST_TABLE_NAME
 
-local function open_stmt()
+local function open_stmt(autodestroy)
+  if stmt:destroyed() then stmt = cnn:statement() end
+  stmt:setdestroyonclose(false)
+  if not stmt:closed() then stmt:close() end
+  stmt:setdestroyonclose(autodestroy)
+
   assert_equal(stmt, stmt:execute(sql))
   assert_false(stmt:closed())
   return stmt
@@ -80,27 +85,59 @@ function test_call()
     return 1
   end
 
+  local function rise_error() error('some error') end
+
   local function inner_test (assert_table_, assert_string_)
 
-    open_stmt():foreach(assert_string_)             assert_true(stmt:closed())
+    open_stmt():foreach(assert_string_)             assert_true (stmt:closed())
 
     open_stmt():foreach(false, assert_string_)      assert_false(stmt:closed())
-    stmt:foreach(nil, assert_string_)               assert_true(stmt:closed())
+    stmt:foreach(nil, assert_string_)               assert_true (stmt:closed())
 
-    open_stmt():foreach('', assert_table_)          assert_true(stmt:closed())
-    open_stmt():foreach('', assert_table_)          assert_true(stmt:closed())
+    open_stmt():foreach('', assert_table_)          assert_true (stmt:closed())
+    open_stmt():foreach('', assert_table_)          assert_true (stmt:closed())
 
-    open_stmt():foreach(nil, nil, assert_string_)   assert_true(stmt:closed())
-    open_stmt():foreach('', nil, assert_table_)     assert_true(stmt:closed())
+    open_stmt():foreach(nil, nil, assert_string_)   assert_true (stmt:closed())
+    open_stmt():foreach('', nil, assert_table_)     assert_true (stmt:closed())
     open_stmt():foreach(nil, false, assert_string_) assert_false(stmt:closed())
+
+    assert_error_match('some error', function() open_stmt():foreach(rise_error) end)
+    assert_true (stmt:closed())
+    assert_error_match('some error', function() open_stmt():foreach(false, rise_error) end)
+    assert_false (stmt:closed())
+
+    assert_true(stmt:close())
+  end
+
+  local function inner_test2 (assert_table_, assert_string_)
+
+    open_stmt(true):foreach(assert_string_)             assert_true (stmt:destroyed())
+
+    open_stmt(true):foreach(false, assert_string_)      assert_false(stmt:destroyed()) assert_false(stmt:closed())
+    stmt:foreach(nil, assert_string_)               assert_true (stmt:destroyed())
+
+    open_stmt(true):foreach('', assert_table_)          assert_true (stmt:destroyed())
+    open_stmt(true):foreach('', assert_table_)          assert_true (stmt:destroyed())
+
+    open_stmt(true):foreach(nil, nil, assert_string_)   assert_true (stmt:destroyed())
+    open_stmt(true):foreach('', nil, assert_table_)     assert_true (stmt:destroyed())
+    open_stmt(true):foreach(nil, false, assert_string_) assert_false(stmt:destroyed()) assert_false(stmt:closed())
+
+    assert_error_match('some error', function() open_stmt(true):foreach(rise_error) end)
+    assert_true (stmt:destroyed())
+    assert_error_match('some error', function() open_stmt(true):foreach(false, rise_error) end)
+    assert_false(stmt:destroyed())
+    assert_false(stmt:closed())
 
     assert_true(stmt:close())
   end
 
   init_table()
   stmt = assert(cnn:statement())
-  inner_test(assert_table_, assert_string_)
-  inner_test(make_fn(assert_table_), make_fn(assert_string_))
+  inner_test (        assert_table_,          assert_string_)
+  inner_test (make_fn(assert_table_), make_fn(assert_string_))
+  inner_test2(        assert_table_,          assert_string_)
+  inner_test2(make_fn(assert_table_), make_fn(assert_string_))
   assert_true(stmt:destroy())
   fin_table()
 end
@@ -109,7 +146,7 @@ function test_cover()
   init_table()
   stmt = assert(cnn:statement())
   stmt = open_stmt()
-  assert_error(open_stmt)
+  assert_error(function() stmt:execute(sql) end)
 
   local t = {}
   local cnt = return_count(stmt:foreach(function(f1)
