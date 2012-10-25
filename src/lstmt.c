@@ -1032,34 +1032,26 @@ static int stmt_get_escapeprocessing(lua_State *L){
 #undef DEFINE_SET_UINT_ATTR
 
 static int stmt_get_autoclose(lua_State *L) {
-  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
-  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
-
+  lodbc_stmt *stmt = lodbc_getstmt(L);
   lua_pushboolean(L, stmt->autoclose?1:0);
   return 1;
 }
 
 static int stmt_set_autoclose(lua_State *L) {
-  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
-  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
-
+  lodbc_stmt *stmt = lodbc_getstmt(L);
   stmt->autoclose = lua_toboolean(L,2)?1:0;
   return 1;
 }
 
 static int stmt_set_destroyonclose(lua_State *L){
-  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
-  int flag = lua_toboolean(L, 2);
-  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
-
-  if(flag) stmt->flags |= LODBC_FLAG_DESTROYONCLOSE;
+  lodbc_stmt *stmt = lodbc_getstmt(L);
+  if(lua_toboolean(L, 2)) stmt->flags |= LODBC_FLAG_DESTROYONCLOSE;
   else  stmt->flags &= ~LODBC_FLAG_DESTROYONCLOSE;
   return lodbc_pass(L);
 }
 
 static int stmt_get_destroyonclose (lua_State *L) {
-  lodbc_stmt *stmt = (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
-  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
+  lodbc_stmt *stmt = lodbc_getstmt(L);
   lua_pushboolean(L, (stmt->flags & LODBC_FLAG_DESTROYONCLOSE));
   return 1;
 }

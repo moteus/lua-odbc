@@ -74,6 +74,7 @@ function Cursor_new(stmt, cnn)
   assert(stmt)
   assert(stmt:connection() == cnn.private_.cnn)
   stmt:setautoclose(true)
+  stmt:setdestroyonclose(true)
   return setmetatable({private_={stmt=stmt,cnn=cnn}}, Cursor)
 end
 

@@ -17,6 +17,7 @@ local function assert_equal2(a,b, ra,rb)
   assert_equal(b,rb)
 end
 
+local TEST_ROWS = 100
 local env, cnn, stmt
 
 local function init_table()
@@ -26,7 +27,7 @@ local function init_table()
   stmt = assert(cnn:statement())
   assert_true(cnn:setautocommit(false))
   assert_true(stmt:prepare("insert into " .. TEST_TABLE_NAME .. "(f1) values(?)"))
-  for i = 1, 100 do
+  for i = 1, TEST_ROWS do
     assert_true(stmt:bindnum(1, i))
     assert_equal(1, stmt:execute())
     assert_true(stmt:closed())
@@ -34,7 +35,7 @@ local function init_table()
   assert_true( cnn:commit()   )
   assert_true( stmt:reset()   )
   assert_true(cnn:setautocommit(true))
-  assert_equal(100, stmt:execute("select count(*) from " .. TEST_TABLE_NAME):fetch() )
+  assert_equal(TEST_ROWS, stmt:execute("select count(*) from " .. TEST_TABLE_NAME):fetch() )
   assert_true( stmt:destroy() )
 end
 
@@ -155,7 +156,7 @@ function test_cover()
     t[n] = true
   end))
 
-  assert_equal(100, #t)
+  assert_equal(TEST_ROWS, #t)
   assert_true(stmt:closed())
   assert_equal(0, cnt)
   assert_true(stmt:destroy())
@@ -195,4 +196,35 @@ function test_error()
   fin_table()
 end
 
+function test_stmt()
+
+  stmt = cnn:statement()
+  assert_true(stmt:getautoclose())
+  assert_false(stmt:getdestroyonclose())
+  assert_error(function() stmt:getlogintimeout() end)
+
+  assert_false(stmt:destroyed())
+  assert_true(stmt:setdestroyonclose(true))
+  assert_true(stmt:close())
+  assert_true(stmt:destroyed())
+  assert_error(function() stmt:getautoclose() end)
+
+  init_table()
+  stmt = cnn:statement()
+
+  cnn:setautocommit(false)
+  assert_equal(TEST_ROWS, stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  assert_equal(TEST_ROWS, stmt:execute('delete from ' .. TEST_TABLE_NAME) )
+  assert_equal(0,         stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  cnn:rollback()
+
+  assert_equal(TEST_ROWS, stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  assert_equal(TEST_ROWS, stmt:execute('delete from ' .. TEST_TABLE_NAME) )
+  assert_equal(0,         stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  cnn:commit()
+
+  assert_equal(0,         stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+
+  fin_table()
+end
 
