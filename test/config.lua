@@ -1,13 +1,13 @@
 CNN_DRV = {
-  {Driver='{Adaptive Server Anywhere 9.0}'};
-  {UID='TestUser'};
+  {Driver='{SQL Anywhere 12}'};
+  {UID='DBA'};
   {PWD='sql'};
-  {EngineName='DevelopServer'};
+  {EngineName='EmptyDB'};
   {DatabaseName='EmptyDB'};
   {CommLinks='tcpip{host=127.0.0.1}'};
 }
 
-CNN_DSN = {'emptydb', 'TestUser', 'sql'}
+CNN_DSN = {'emptydb', 'DBA', 'sql'}
 
 CREATE_TABLE_RETURN_VALUE = -1
 

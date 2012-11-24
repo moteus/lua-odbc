@@ -1,5 +1,3 @@
-require "config"
-require "tools"
 require "01_test_odbc_env"
 require "02_test_odbc_cnn"
 require "03_test_odbc_cnn_info"

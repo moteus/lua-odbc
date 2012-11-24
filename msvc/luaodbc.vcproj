@@ -207,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\lval.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\parlist.c"
 				>
 			</File>
@@ -250,6 +254,10 @@
 			</File>
 			<File
 				RelativePath="..\include\luaodbc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\lval.h"
 				>
 			</File>
 			<File

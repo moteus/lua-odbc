@@ -1,4 +1,6 @@
 require "config"
+require "tools"
+
 local lunit = require "lunitx"
 
 local TEST_NAME = 'Connection test info'
