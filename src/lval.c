@@ -185,6 +185,119 @@ make_numeric_T(double  , SQLDOUBLE      )
 
 //}
 
+//{ bit
+static const char* lodbc_bit_NAME = LODBC_PREFIX"bit";              
+#define lodbc_bit_CTYPE  SQL_C_BIT
+#define lodbc_bit_STYPE  SQL_BIT
+
+typedef struct lodbc_bit{                                        
+  SQLLEN  ind;                                                    
+  SQLCHAR data;                                                   
+}lodbc_bit;                                                      
+                                                                 
+static int lodbc_bit_create(lua_State *L){                       
+  lodbc_bit *val = lodbc_newval(L, lodbc_bit);                   
+  if(lua_isboolean(L,1)){                                         
+    val->ind = 0;                                                
+    val->data = lua_toboolean(L, 1);                          
+  } else val->ind = SQL_NULL_DATA;                               
+  return 1;                                                      
+}
+
+static int lodbc_bit_get_value(lua_State *L){                    
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  if(val->ind == SQL_NULL_DATA) lua_pushnil(L);                  
+  else lua_pushboolean(L, val->data);                             
+  return 1;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_set_value(lua_State *L){                    
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  if(lua_type(L,2) == LUA_TNUMBER){
+    val->data = lua_tointeger(L, 2)?1:0;
+  }
+  else val->data = lua_toboolean(L,2);
+  val->ind  = 0;                                                 
+  return 0;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_size(lua_State *L){                         
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  lua_pushnumber(L, sizeof(val->data));                          
+  return 1;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_set_null(lua_State *L){                     
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  val->ind = SQL_NULL_DATA;                                      
+  return 0;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_set_default(lua_State *L){                  
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  val->ind = SQL_DEFAULT_PARAM;                                  
+  return 0;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_is_null(lua_State *L){                      
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  lua_pushboolean(L, (val->ind == SQL_NULL_DATA)?1:0);           
+  return 1;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_is_default(lua_State *L){                   
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  lua_pushboolean(L, (val->ind == SQL_DEFAULT_PARAM)?1:0);       
+  return 1;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_bind_col(lua_State *L){                     
+  lodbc_bit *val = lodbc_value(L, lodbc_bit);                    
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);                    
+  SQLSMALLINT i = luaL_checkint(L, 3);                           
+  SQLRETURN ret = SQLBindCol(stmt->handle, i,                    
+    lodbc_bit_CTYPE, &val->data, 0, &val->ind);                  
+  if (lodbc_iserror(ret))                                        
+    return lodbc_fail(L, hSTMT, stmt->handle);                   
+  lua_settop(L, 1);                                              
+  return 1;                                                      
+}                                                                
+                                                                 
+static int lodbc_bit_bind_param(lua_State *L){                   
+  lodbc_bit   *val = lodbc_value(L, lodbc_bit);                  
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);                    
+  SQLSMALLINT i = luaL_checkint(L, 3);                           
+  int par_type        = optpartype(L,4);                         
+  SQLSMALLINT sqltype = luaL_optint(L, 5, lodbc_bit_STYPE);      
+  SQLULEN     len     = luaL_optint(L, 6, 0);                    
+  SQLSMALLINT scale   = luaL_optint(L, 7, 0);                    
+                                                                 
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i,par_type,     
+                  lodbc_bit_CTYPE, sqltype, len, scale,          
+                  &val->data, sizeof(val->data), &val->ind);     
+                                                                 
+  if (lodbc_iserror(ret))                                        
+    return lodbc_fail(L, hSTMT, stmt->handle);                   
+  lua_settop(L, 1);                                              
+  return 1;                                                      
+}                                                                
+                                                                 
+static const struct luaL_Reg lodbc_bit_methods[] = {             
+  {"set_null",   lodbc_bit_set_null},                            
+  {"set_default",lodbc_bit_set_default},                         
+  {"is_null",    lodbc_bit_is_null},                             
+  {"is_default", lodbc_bit_is_default},                          
+  {"set",        lodbc_bit_set_value},                           
+  {"get",        lodbc_bit_get_value},                           
+  {"size",       lodbc_bit_size},                                
+  {"bind_col",   lodbc_bit_bind_col},                            
+  {"bind_param", lodbc_bit_bind_param},                          
+                                                                 
+  {NULL, NULL},                                                  
+};                                                               
+
+//}
+
 //{ char
 
 #define lodbc_char_CTYPE  SQL_C_CHAR
@@ -232,7 +345,7 @@ static int lodbc_char_create(lua_State *L){
     val->ind = sz;
     memcpy(val->data, data, val->ind);
   }
-  else val->ind = 0;
+  else val->ind = SQL_NULL_DATA;
   return 1;
 }
 
@@ -384,7 +497,7 @@ static int lodbc_binary_create(lua_State *L){
     val->ind = sz;
     memcpy(val->data, data, val->ind);
   }
-  else val->ind = 0;
+  else val->ind = SQL_NULL_DATA;
   return 1;
 }
 
@@ -532,7 +645,7 @@ static int lodbc_date_create(lua_State *L){
   lodbc_char *val;
   SQLULEN len = 1;
   val = lutil_newudatap_impl(L, sizeof(lodbc_date), lodbc_date_NAME);
-  val->ind = 0;
+  val->ind = SQL_NULL_DATA;
   return 1;
 }
 
@@ -702,6 +815,7 @@ static const struct luaL_Reg lodbc_val_func[] = {
   ctor_record( char     ),
   ctor_record( binary   ),
   ctor_record( date     ),
+  ctor_record( bit      ),
 
   {NULL, NULL}
 };
@@ -720,6 +834,7 @@ void lodbc_val_initlib (lua_State *L, int nup){
   reg_type( char     );
   reg_type( binary   );
   reg_type( date     );
+  reg_type( bit      );
 
   lua_pop(L, nup);
   lua_pushvalue(L, -1 - nup);

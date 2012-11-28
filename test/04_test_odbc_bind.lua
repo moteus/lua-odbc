@@ -120,7 +120,7 @@ local function VEXEC_AND_ASSERT(qrySQL)
   local outDateVal    = assert( odbc.date()               :bind_col(stmt, 6  ) )
   local outNullVal    = assert( odbc.utinyint()           :bind_col(stmt, 7  ) )
   local outDefaultVal = assert( odbc.ulong()              :bind_col(stmt, 8  ) )
-  local outBoolVal    = assert( odbc.utinyint()           :bind_col(stmt, 9  ) )
+  local outBoolVal    = assert( odbc.bit()                :bind_col(stmt, 9  ) )
   local outGuidVal    = assert( odbc.binary(#inGuidVal)   :bind_col(stmt, 10 ) )
 
   assert_true(stmt:vfetch())
@@ -147,7 +147,7 @@ local function VEXEC_AND_ASSERT(qrySQL)
   assert_equal(inDateVal   , outDateVal     :get())
   assert_equal(inNullVal   , outNullVal     :get())
   assert_equal(inDefaultVal, outDefaultVal  :get())
-  assert_equal(inBoolVal   , outBoolVal     :get() == 1)
+  assert_equal(inBoolVal   , outBoolVal     :get())
   assert_equal(x(inGuidVal), outGuidVal     :get())
 end
 
@@ -256,7 +256,7 @@ function test_bind_value()
   local vDateVal    = odbc.char("2011-01-01") -- sybase has error. for date : Cannot convert SQLDATETIME to a date
   local vNullVal    = odbc.utinyint()
   local vDefaultVal = odbc.ulong(1234)
-  local vBoolVal    = odbc.utinyint(1) --!@todo implement bit/bool
+  local vBoolVal    = odbc.bit(true)
   local vGuidVal    = odbc.binary(x'B1BB49A2B4014413BEBB7ACD10399875')
 
   assert_boolean(proc_exists(cnn))
