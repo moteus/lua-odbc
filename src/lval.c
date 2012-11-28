@@ -76,9 +76,10 @@ typedef struct lodbc_##T{                                           \
                                                                     \
 static int lodbc_##T##_create(lua_State *L){                        \
   lodbc_##T *val = lodbc_newval(L, lodbc_##T);                      \
-  val->ind = 0;                                                     \
-  if(lua_isnumber(L,1))                                             \
+  if(lua_isnumber(L,1)){                                            \
+    val->ind = 0;                                                   \
     val->data = (CT)lua_tonumber(L, 1);                             \
+  } else val->ind = SQL_NULL_DATA;                                  \
   return 1;                                                         \
 }                                                                   \
                                                                     \
@@ -502,9 +503,14 @@ static const struct luaL_Reg lodbc_binary_methods[] = {
 //}
 
 //{ date
+#if (LODBC_ODBCVER >= 0x0300)
+#  define lodbc_date_CTYPE  SQL_C_TYPE_DATE
+#  define lodbc_date_STYPE  SQL_TYPE_DATE
+#else
+#  define lodbc_date_CTYPE  SQL_C_DATE
+#  define lodbc_date_STYPE  SQL_DATE
+#endif
 
-#define lodbc_date_CTYPE  SQL_C_DATE
-#define lodbc_date_STYPE  SQL_DATE
 static const char* lodbc_date_NAME = LODBC_PREFIX"date";
 typedef struct lodbc_date{
   SQLLEN  ind;

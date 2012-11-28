@@ -552,6 +552,28 @@ static int stmt_putparam(lua_State *L, lodbc_stmt *stmt, par_data *par){
 
 //{ fetch
 
+static int stmt_vfetch (lua_State *L) {
+  lodbc_stmt *stmt = lodbc_getstmt(L);
+  SQLHSTMT hstmt = stmt->handle;
+  SQLRETURN rc;
+
+  if(!(stmt->flags & LODBC_FLAG_OPENED)){
+    return luaL_error (L, LODBC_PREFIX"there are no open cursor");
+  }
+
+  rc = SQLFetch(hstmt);
+  if (rc == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) {
+    if(stmt->autoclose){
+      stmt_close(L);
+    }
+    lua_pushboolean(L,0);
+    return 1;
+  } else if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
+
+  lua_pushboolean(L,1);
+  return 1;
+}
+
 static int stmt_fetch (lua_State *L) {
   lodbc_stmt *stmt = lodbc_getstmt(L);
   SQLHSTMT hstmt = stmt->handle;
@@ -569,6 +591,10 @@ static int stmt_fetch (lua_State *L) {
     }
     return 0;
   } else if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
+
+  if(stmt->coltypes == LUA_NOREF){
+    create_colinfo(L, stmt);
+  }
 
   if (lua_istable (L, 2)) {// stack: cur, row, fetch_mode?
     alpha_mode = 0;
@@ -678,6 +704,10 @@ static int stmt_foreach_(lua_State *L, lodbc_stmt *stmt, lua_CFunction close_fn)
 
   assert(lua_gettop(L) == 2);                          // stack: cur, func
   luaL_argcheck(L, lodbc_iscallable(L,-1), top, "must be callable");
+
+  if(stmt->coltypes == LUA_NOREF){
+    create_colinfo(L, stmt);
+  }
 
   if(alpha_mode >= 0){                                     // stack: cur, func
     if(alpha_mode){
@@ -807,22 +837,26 @@ static int stmt_execute(lua_State *L){
     return luaL_error (L, LODBC_PREFIX"there are open cursor");
   }
 
+  stmt->last_exec_ret = 0;
   if(stmt->flags & LODBC_FLAG_PREPARED){
     ret = SQLExecute (stmt->handle);
     if(stmt->resultsetno != 0){// cols are not valid
       luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
       luaL_unref (L, LODBC_LUA_REGISTRY, stmt->coltypes);
-      stmt->colnames  = LUA_NOREF;
-      stmt->coltypes  = LUA_NOREF;
-      stmt->numcols   = 0;
-      stmt->resultsetno   = 0;
+      stmt->colnames    = LUA_NOREF;
+      stmt->coltypes    = LUA_NOREF;
+      stmt->numcols     = 0;
+      stmt->resultsetno = 0;
     }
   }
   else{
     const char *statement = luaL_checkstring(L, 2);
     luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
     luaL_unref (L, LODBC_LUA_REGISTRY, stmt->coltypes);
-    stmt->numcols = 0;
+    stmt->colnames    = LUA_NOREF;
+    stmt->coltypes    = LUA_NOREF;
+    stmt->numcols     = 0;
+    stmt->resultsetno = 0;
 
     ret = SQLExecDirect (stmt->handle, (char *) statement, SQL_NTS); 
   }
@@ -848,15 +882,15 @@ static int stmt_execute(lua_State *L){
       }
     }
     if(
-        (lodbc_iserror(ret))&&
-        (ret != LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND))
+      (lodbc_iserror(ret))&&
+      (ret != LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND))
     ){
-        return lodbc_fail(L, hSTMT, stmt->handle);
+      return lodbc_fail(L, hSTMT, stmt->handle);
     }
   }
 
   assert(lua_gettop(L) == top);
-  exec_ret = ret;
+  stmt->last_exec_ret = exec_ret = ret;
 
   if(!stmt->numcols){
     SQLSMALLINT numcols;
@@ -869,11 +903,10 @@ static int stmt_execute(lua_State *L){
     if (lodbc_iserror(ret))
         return lodbc_fail(L, hSTMT, stmt->handle);
     stmt->numcols = numcols;
-    if(numcols)
-      create_colinfo(L, stmt);
   }
 
-  if (stmt->numcols > 0){
+  lua_settop(L,1);
+  if(stmt->numcols > 0){
     stmt->flags |= LODBC_FLAG_OPENED;
   }
   else{
@@ -894,6 +927,24 @@ static int stmt_execute(lua_State *L){
   }
 
   return 1; // rowsaffected or self
+}
+
+static int stmt_rowcount(lua_State *L){
+  lodbc_stmt *stmt = lodbc_getstmt(L);
+  SQLINTEGER numrows = 0;
+  // For ODBC3, if the last call to SQLExecute or SQLExecDirect
+  // returned SQL_NO_DATA, a call to SQLRowCount can cause a
+  // function sequence error. Therefore, if the last result is
+  // SQL_NO_DATA, we simply return 0
+
+  if(stmt->last_exec_ret != LODBC_ODBC3_C(SQL_NO_DATA, SQL_NO_DATA_FOUND)){
+    SQLRETURN ret = SQLRowCount(stmt->handle, &numrows);
+    if(lodbc_iserror(ret)){
+      return lodbc_fail(L, hSTMT, stmt->handle);
+    }
+  }
+  lua_pushnumber(L, numrows);
+  return 1;
 }
 
 static int stmt_reset_colinfo (lua_State *L) {
@@ -1063,6 +1114,9 @@ static int stmt_get_destroyonclose (lua_State *L) {
 */
 static int stmt_colnames (lua_State *L) {
   lodbc_stmt *stmt = lodbc_getstmt(L);
+  if((stmt->numcols > 0) && (stmt->coltypes == LUA_NOREF)){
+    create_colinfo(L, stmt);
+  }
   lua_rawgeti (L, LODBC_LUA_REGISTRY, stmt->colnames);
   return 1;
 }
@@ -1072,6 +1126,9 @@ static int stmt_colnames (lua_State *L) {
 */
 static int stmt_coltypes (lua_State *L) {
   lodbc_stmt *stmt = lodbc_getstmt(L);
+  if((stmt->numcols > 0) && (stmt->coltypes == LUA_NOREF)){
+    create_colinfo(L, stmt);
+  }
   lua_rawgeti (L, LODBC_LUA_REGISTRY, stmt->coltypes);
   return 1;
 }
@@ -1116,6 +1173,8 @@ static const struct luaL_Reg lodbc_stmt_methods[] = {
   {"resetcolinfo", stmt_reset_colinfo},
   {"connection", stmt_connection},
 
+  {"rowcount",  stmt_rowcount},
+  {"vfetch",    stmt_vfetch},
   {"fetch",     stmt_fetch},
   {"execute",   stmt_execute},
   {"prepare",   stmt_prepare},

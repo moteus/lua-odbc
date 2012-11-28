@@ -1,4 +1,5 @@
 require "config"
+require "tools"
 local lunit = require "lunitx"
 
 local TEST_NAME = 'Statement bind'
@@ -25,6 +26,13 @@ function setup()
   env, cnn = do_connect()
   assert_not_nil(env, cnn)
 end
+
+local x = function(b)
+  return(string.gsub(b, "([a-fA-F0-9][a-fA-F0-9])", function(v)
+    return string.char( tonumber(v, 16) )
+  end))
+end
+
 
 local inIntVal     = -0x7FFFFFFF
 local inUIntVal    = 0xFFFFFFFF
@@ -68,9 +76,11 @@ local function EXEC_AND_ASSERT(qrySQL)
   if qrySQL then assert_equal(stmt, stmt:execute(qrySQL))
   else assert_equal(stmt, stmt:execute()) end
 
+  assert_equal(1, stmt:rowcount())
   local outIntVal, outUIntVal, outDoubleVal, outStringVal,
   outBinaryVal, outDateVal, outNullVal, outDefaultVal,
   outBoolVal,outGuidVal = stmt:fetch()
+
   stmt:close()
 
   -- print()
@@ -97,6 +107,50 @@ local function EXEC_AND_ASSERT(qrySQL)
   assert_equal(inBoolVal   , outBoolVal     )
   assert_equal(inGuidVal   , outGuidVal     )
 end
+
+local function VEXEC_AND_ASSERT(qrySQL)
+  if qrySQL then assert_equal(stmt, stmt:execute(qrySQL))
+  else assert_equal(stmt, stmt:execute()) end
+
+  local outIntVal     = assert( odbc.slong()              :bind_col(stmt, 1  ) )
+  local outUIntVal    = assert( odbc.ulong()              :bind_col(stmt, 2  ) )
+  local outDoubleVal  = assert( odbc.double()             :bind_col(stmt, 3  ) )
+  local outStringVal  = assert( odbc.char(#inStringVal)   :bind_col(stmt, 4  ) )
+  local outBinaryVal  = assert( odbc.binary(#inBinaryVal) :bind_col(stmt, 5  ) )
+  local outDateVal    = assert( odbc.date()               :bind_col(stmt, 6  ) )
+  local outNullVal    = assert( odbc.utinyint()           :bind_col(stmt, 7  ) )
+  local outDefaultVal = assert( odbc.ulong()              :bind_col(stmt, 8  ) )
+  local outBoolVal    = assert( odbc.utinyint()           :bind_col(stmt, 9  ) )
+  local outGuidVal    = assert( odbc.binary(#inGuidVal)   :bind_col(stmt, 10 ) )
+
+  assert_true(stmt:vfetch())
+  stmt:close()
+
+  -- print()
+  -- print('IntVal     =', outIntVal      :get())
+  -- print('UIntVal    =', outUIntVal     :get())
+  -- print('DoubleVal  =', outDoubleVal   :get())
+  -- print('StringVal  =', outStringVal   :get())
+  -- print('BinaryVal  =', outBinaryVal   :get())
+  -- print('DateVal    =', outDateVal     :get())
+  -- print('NullVal    =', outNullVal     :get())
+  -- print('DefaultVal =', outDefaultVal  :get())
+  -- print('BoolVal    =', outBoolVal     :get())
+  -- print('GuidVal    =', outGuidVal     :get())
+  -- print"================================="
+
+  assert_equal(inIntVal    , outIntVal      :get())
+  assert_equal(inUIntVal   , outUIntVal     :get())
+  assert_equal(inDoubleVal , outDoubleVal   :get())
+  assert_equal(inStringVal , outStringVal   :get())
+  assert_equal(inBinaryVal , outBinaryVal   :get())
+  assert_equal(inDateVal   , outDateVal     :get())
+  assert_equal(inNullVal   , outNullVal     :get())
+  assert_equal(inDefaultVal, outDefaultVal  :get())
+  assert_equal(inBoolVal   , outBoolVal     :get() == 1)
+  assert_equal(x(inGuidVal), outGuidVal     :get())
+end
+
 
 local function BIND(stmt)
   assert_true(stmt:bindnum    (1,inIntVal    ))
@@ -193,3 +247,36 @@ function test_4()
   assert_true(stmt:destroy())
 end
 
+function test_bind_value()
+  local vIntVal     = odbc.slong(-0x7FFFFFFF)
+  local vUIntVal    = odbc.ulong(0xFFFFFFFF)
+  local vDoubleVal  = odbc.double(1234.235664879123456)
+  local vStringVal  = odbc.char("Hello world")
+  local vBinaryVal  = odbc.binary("\000\001\002\003")
+  local vDateVal    = odbc.char("2011-01-01") -- sybase has error. for date : Cannot convert SQLDATETIME to a date
+  local vNullVal    = odbc.utinyint()
+  local vDefaultVal = odbc.ulong(1234)
+  local vBoolVal    = odbc.utinyint(1) --!@todo implement bit/bool
+  local vGuidVal    = odbc.binary(x'B1BB49A2B4014413BEBB7ACD10399875')
+
+  assert_boolean(proc_exists(cnn))
+  assert(ensure_proc(cnn))
+  assert_true(proc_exists(cnn))
+
+  stmt = cnn:statement()
+
+  assert_equal(vIntVal     , vIntVal     :bind_param(stmt, 1  ))
+  assert_equal(vUIntVal    , vUIntVal    :bind_param(stmt, 2  ))
+  assert_equal(vDoubleVal  , vDoubleVal  :bind_param(stmt, 3  ))
+  assert_equal(vStringVal  , vStringVal  :bind_param(stmt, 4  ))
+  assert_equal(vBinaryVal  , vBinaryVal  :bind_param(stmt, 5  ))
+  assert_equal(vDateVal    , vDateVal    :bind_param(stmt, 6, odbc.PARAM_INPUT, odbc.DATE))
+  assert_equal(vNullVal    , vNullVal    :bind_param(stmt, 7  ))
+  assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, 8  ))
+  assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, 9  ))
+  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, 10 ))
+
+  EXEC_AND_ASSERT(TEST_PROC_CALL)
+  VEXEC_AND_ASSERT(TEST_PROC_CALL)
+  assert_true(stmt:destroy())
+end

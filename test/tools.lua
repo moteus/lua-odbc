@@ -1,4 +1,5 @@
 odbc = require "lodbc"
+require "config"
 
 function is_dsn_exists(env, dsn_name)
   local cnt, d = return_count(env:datasources(function(dsn) 

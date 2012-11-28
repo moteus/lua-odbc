@@ -16,6 +16,7 @@ typedef struct lodbc_stmt{
   par_data  *par;
   lodbc_cnn *cnn;
   int       cnn_ref;
+  SQLRETURN last_exec_ret;
 } lodbc_stmt;
 
 lodbc_stmt *lodbc_getstmt_at (lua_State *L, int i);
