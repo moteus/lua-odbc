@@ -242,24 +242,13 @@ static int stmt_prepare_ (lua_State *L, lodbc_stmt *stmt, const char *statement)
     return lodbc_fail(L, hSTMT, stmt->handle);
 
   stmt->numcols  = numcols;
-  if(stmt->numcols){
-    create_colinfo(L, stmt);
-  }
 
   stmt->numpars = -1;
   if((stmt->cnn)&&(stmt->cnn->supports[LODBC_CNN_SUPPORT_NUMPARAMS])){
     SQLSMALLINT numpars;
     ret = SQLNumParams(stmt->handle, &numpars);
     if (lodbc_iserror(ret)) return 0;
-
     stmt->numpars = numpars;
-    if(stmt->numpars){
-      ret = create_parinfo(L, stmt);
-      if(ret){
-        stmt_clear_info_(L, stmt);
-        return ret;
-      }
-    }
   }
   return 0;
 }
@@ -386,6 +375,13 @@ static int stmt_bind_bool_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_d
   par_data     *par = NULL;\
   SQLUSMALLINT    i = luaL_checkint(L,2);\
   if(i <= 0) return lodbc_faildirect(L, "invalid param index");\
+  if((stmt->numpars>0) && (!stmt->par)){\
+    int ret = create_parinfo(L, stmt);\
+    if(ret){\
+      stmt_clear_info_(L, stmt);\
+      return ret;\
+    }\
+  }\
   if(stmt->numpars >= 0){\
     assert(stmt->flags & LODBC_FLAG_PREPARED);\
     if(i > stmt->numpars) return lodbc_faildirect(L, "invalid param index");\

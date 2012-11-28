@@ -278,5 +278,21 @@ function test_bind_value()
 
   EXEC_AND_ASSERT(TEST_PROC_CALL)
   VEXEC_AND_ASSERT(TEST_PROC_CALL)
+
+  stmt:prepare(TEST_PROC_CALL)
+  assert_equal(vIntVal     , vIntVal     :bind_param(stmt, 1  ))
+  assert_equal(vUIntVal    , vUIntVal    :bind_param(stmt, 2  ))
+  assert_equal(vDoubleVal  , vDoubleVal  :bind_param(stmt, 3  ))
+  assert_equal(vStringVal  , vStringVal  :bind_param(stmt, 4  ))
+  assert_equal(vBinaryVal  , vBinaryVal  :bind_param(stmt, 5  ))
+  assert_equal(vDateVal    , vDateVal    :bind_param(stmt, 6, odbc.PARAM_INPUT, odbc.DATE))
+  assert_equal(vNullVal    , vNullVal    :bind_param(stmt, 7  ))
+  assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, 8  ))
+  assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, 9  ))
+  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, 10 ))
+
+  EXEC_AND_ASSERT()
+  VEXEC_AND_ASSERT()
+
   assert_true(stmt:destroy())
 end
