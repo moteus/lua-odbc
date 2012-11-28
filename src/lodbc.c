@@ -23,13 +23,31 @@ LODBC_EXPORT int lodbc_statement(lua_State *L, SQLHSTMT hstmt, unsigned char own
   return lodbc_statement_create(L,hstmt, NULL, 0, own, 0, 0);
 }
 
-
 static int lodbc_environment_(lua_State *L){
   return lodbc_environment_create(L, SQL_NULL_HANDLE, 1);
 }
 
+static int lodbc_getenvmeta(lua_State *L){
+  lutil_getmetatablep(L, LODBC_ENV);
+  return 1;
+}
+
+static int lodbc_getcnnmeta(lua_State *L){
+  lutil_getmetatablep(L, LODBC_CNN);
+  return 1;
+}
+
+static int lodbc_getstmtmeta(lua_State *L){
+  lutil_getmetatablep(L, LODBC_STMT);
+  return 1;
+}
+
 static const struct luaL_Reg lodbc_func[]   = {
   { "environment",  lodbc_environment_    },
+
+  { "getenvnmeta",  lodbc_getenvmeta   },
+  { "getcnnmeta",   lodbc_getcnnmeta   },
+  { "getstmtmeta",  lodbc_getstmtmeta  },
 
   {NULL, NULL}
 };
