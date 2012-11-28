@@ -21,6 +21,21 @@ static void *lodbc_value_at_impl (lua_State *L, const char*NAME, int i) {
   return NULL;
 }
 
+static int optpartype(lua_State *L, int idx){
+  int par_type;
+  if(LUA_TNONE == lua_type(L, idx)) return SQL_PARAM_INPUT;
+  par_type = luaL_checkint(L,idx);
+  luaL_argcheck(L,
+    (par_type == SQL_PARAM_INPUT)||
+    (par_type == SQL_PARAM_OUTPUT)||
+    (par_type == SQL_PARAM_INPUT_OUTPUT)||
+    (par_type == SQL_RETURN_VALUE),
+    idx, "invalid parameter type"
+  );
+  return par_type;
+}
+
+
 #define lodbc_value_at(L, T, I) (T *)lodbc_value_at_impl(L, T##_NAME, I)
 #define lodbc_value(L, T) lodbc_value_at(L, T, 1)
 #define create_meta(L, T) lutil_createmetap(L, T##_NAME, T##_methods, 0)
@@ -81,6 +96,12 @@ int lodbc_##T##_set_value(lua_State *L){                            \
   return 0;                                                         \
 }                                                                   \
                                                                     \
+int lodbc_##T##_size(lua_State *L){                                 \
+  lodbc_##T *val = lodbc_value(L, lodbc_##T);                       \
+  lua_pushnumber(L, sizeof(val->data));                             \
+  return 1;                                                         \
+}                                                                   \
+                                                                    \
 int lodbc_##T##_set_null(lua_State *L){                             \
   lodbc_##T *val = lodbc_value(L, lodbc_##T);                       \
   val->ind = SQL_NULL_DATA;                                         \
@@ -113,24 +134,27 @@ static int lodbc_##T##_bind_col(lua_State *L){                      \
     lodbc_##T##_CTYPE, &val->data, 0, &val->ind);                   \
   if (lodbc_iserror(ret))                                           \
     return lodbc_fail(L, hSTMT, stmt->handle);                      \
-  return lodbc_pass(L);                                             \
+  lua_settop(L, 1);                                                 \
+  return 1;                                                         \
 }                                                                   \
                                                                     \
 static int lodbc_##T##_bind_param(lua_State *L){                    \
   lodbc_##T   *val = lodbc_value(L, lodbc_##T);                     \
   lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);                       \
   SQLSMALLINT i = luaL_checkint(L, 3);                              \
-  SQLSMALLINT sqltype = luaL_optint(L, 4, lodbc_##T##_STYPE);       \
-  SQLULEN     len     = luaL_optint(L, 4, 0);                       \
-  SQLSMALLINT scale   = luaL_optint(L, 4, 0);                       \
+  int par_type        = optpartype(L,4);                            \
+  SQLSMALLINT sqltype = luaL_optint(L, 5, lodbc_##T##_STYPE);       \
+  SQLULEN     len     = luaL_optint(L, 6, 0);                       \
+  SQLSMALLINT scale   = luaL_optint(L, 7, 0);                       \
                                                                     \
-  SQLRETURN ret = SQLBindParameter(stmt->handle, i,SQL_PARAM_INPUT, \
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i,par_type,        \
                   lodbc_##T##_CTYPE, sqltype, len, scale,           \
                   &val->data, sizeof(val->data), &val->ind);        \
                                                                     \
   if (lodbc_iserror(ret))                                           \
     return lodbc_fail(L, hSTMT, stmt->handle);                      \
-  return lodbc_pass(L);                                             \
+  lua_settop(L, 1);                                                 \
+  return 1;                                                         \
 }                                                                   \
                                                                     \
 static const struct luaL_Reg lodbc_##T##_methods[] = {              \
@@ -140,6 +164,7 @@ static const struct luaL_Reg lodbc_##T##_methods[] = {              \
   {"is_default", lodbc_##T##_is_default},                           \
   {"set",        lodbc_##T##_set_value},                            \
   {"get",        lodbc_##T##_get_value},                            \
+  {"size",       lodbc_##T##_size},                                 \
   {"bind_col",   lodbc_##T##_bind_col},                             \
   {"bind_param", lodbc_##T##_bind_param},                           \
                                                                     \
@@ -284,24 +309,28 @@ static int lodbc_char_bind_col(lua_State *L){
     lodbc_char_CTYPE, &val->data[0], val->size + 1, &val->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
-  return lodbc_pass(L);
+  lua_settop(L, 1);
+  return 1;
 }
 
 static int lodbc_char_bind_param(lua_State *L){
   lodbc_char   *val = lodbc_value(L, lodbc_char);
   lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
-  SQLSMALLINT i = luaL_checkint(L, 3);
-  SQLSMALLINT sqltype = luaL_optint(L, 4, lodbc_char_STYPE);
-  SQLULEN     len     = luaL_optint(L, 4, val->size);
-  SQLSMALLINT scale   = luaL_optint(L, 4, 0);
+  SQLSMALLINT i       = luaL_checkint(L, 3);
+  int par_type        = optpartype(L,4);
+  SQLSMALLINT sqltype = luaL_optint(L, 5, lodbc_char_STYPE);
+  SQLULEN     len     = luaL_optint(L, 6, val->size);
+  SQLSMALLINT scale   = luaL_optint(L, 7, 0);
+  SQLRETURN ret;
 
-  SQLRETURN ret = SQLBindParameter(stmt->handle, i,SQL_PARAM_INPUT,
+  ret = SQLBindParameter(stmt->handle, i,par_type,
     lodbc_char_CTYPE, sqltype, len, scale,
     &val->data, val->size + 1, &val->ind);
 
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
-  return lodbc_pass(L);
+  lua_settop(L, 1);
+  return 1;
 }
 
 static const struct luaL_Reg lodbc_char_methods[] = { 
@@ -348,7 +377,7 @@ static int lodbc_binary_create(lua_State *L){
   }
 
   if(0 == len) len = 1;
-  val = lutil_newudatap_impl(L, sizeof(lodbc_char) + len - 1, lodbc_binary_NAME);
+  val = lutil_newudatap_impl(L, sizeof(lodbc_binary) + len - 1, lodbc_binary_NAME);
   val->size = len;
   if(data){
     val->ind = sz;
@@ -432,24 +461,27 @@ static int lodbc_binary_bind_col(lua_State *L){
     lodbc_binary_CTYPE, &val->data[0], val->size, &val->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
-  return lodbc_pass(L);
+  lua_settop(L, 1);
+  return 1;
 }
 
 static int lodbc_binary_bind_param(lua_State *L){
   lodbc_binary   *val = lodbc_value(L, lodbc_binary);
   lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
   SQLSMALLINT i = luaL_checkint(L, 3);
-  SQLSMALLINT sqltype = luaL_optint(L, 4, lodbc_binary_STYPE);
-  SQLULEN     len     = luaL_optint(L, 4, val->size);
-  SQLSMALLINT scale   = luaL_optint(L, 4, 0);
+  int par_type        = optpartype(L,4);
+  SQLSMALLINT sqltype = luaL_optint(L, 5, lodbc_binary_STYPE);
+  SQLULEN     len     = luaL_optint(L, 6, val->size);
+  SQLSMALLINT scale   = luaL_optint(L, 7, 0);
 
-  SQLRETURN ret = SQLBindParameter(stmt->handle, i,SQL_PARAM_INPUT,
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i, par_type,
     lodbc_binary_CTYPE, sqltype, len, scale,
-    &val->data, val->size, &val->ind);
+    &val->data[0], val->size, &val->ind);
 
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
-  return lodbc_pass(L);
+  lua_settop(L, 1);
+  return 1;
 }
 
 static const struct luaL_Reg lodbc_binary_methods[] = { 
@@ -469,6 +501,182 @@ static const struct luaL_Reg lodbc_binary_methods[] = {
 
 //}
 
+//{ date
+
+#define lodbc_date_CTYPE  SQL_C_DATE
+#define lodbc_date_STYPE  SQL_DATE
+static const char* lodbc_date_NAME = LODBC_PREFIX"date";
+typedef struct lodbc_date{
+  SQLLEN  ind;
+  SQL_DATE_STRUCT data;
+}lodbc_date;
+
+static int str_2_date(lodbc_date *val, const char *str){
+  int y, m, d;
+  if(3 == sscanf(str, "%d-%d-%d", &y, &m, &d)){
+    val->data.year  = y;
+    val->data.month = m;
+    val->data.day   = d;
+  }
+}
+
+static int lodbc_date_create(lua_State *L){
+  lodbc_char *val;
+  SQLULEN len = 1;
+  val = lutil_newudatap_impl(L, sizeof(lodbc_date), lodbc_date_NAME);
+  val->ind = 0;
+  return 1;
+}
+
+int lodbc_date_get_value(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  if   (val->ind == SQL_NULL_DATA) lua_pushnil(L);
+  else if(val->ind == SQL_DEFAULT) lua_pushnil(L);
+  else{
+    char str[128];
+    sprintf(str, "%.4d-%.2d-%.2d", val->data.year, val->data.month, val->data.day);
+    lua_pushstring(L, str);
+  }
+  return 1;
+}
+
+int lodbc_date_set_value(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  str_2_date(val, luaL_checkstring(L,2));
+  return 0;
+}
+
+int lodbc_date_set_null(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  val->ind = SQL_NULL_DATA;
+  return 0;
+}
+
+int lodbc_date_set_default(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  val->ind = SQL_DEFAULT_PARAM;
+  return 0;
+}
+
+int lodbc_date_is_null(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  lua_pushboolean(L, (val->ind == SQL_NULL_DATA)?1:0);
+  return 1;
+}
+
+int lodbc_date_is_default(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  lua_pushboolean(L, (val->ind == SQL_DEFAULT_PARAM)?1:0);
+  return 1;
+}
+
+static int lodbc_date_bind_col(lua_State *L){
+  lodbc_date *val = lodbc_value(L, lodbc_date);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  SQLRETURN ret;
+  ret = SQLBindCol(stmt->handle, i,
+    lodbc_date_CTYPE, &val->data, sizeof(val->data), &val->ind);
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
+static int lodbc_date_bind_param(lua_State *L){
+  lodbc_date   *val = lodbc_value(L, lodbc_date);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  int par_type        = optpartype(L,4);
+  SQLSMALLINT sqltype = luaL_optint(L, 5, lodbc_date_STYPE);
+  SQLULEN     len     = luaL_optint(L, 6, sizeof(val->data));
+  SQLSMALLINT scale   = luaL_optint(L, 7, 0);
+
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i, par_type,
+    lodbc_date_CTYPE, sqltype, len, scale,
+    &val->data, sizeof(val->data), &val->ind);
+
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
+static const struct luaL_Reg lodbc_date_methods[] = { 
+  {"set_null",   lodbc_date_set_null},
+  {"set_default",lodbc_date_set_default},
+  {"set",        lodbc_date_set_value},
+  {"get",        lodbc_date_get_value},
+  {"is_null",    lodbc_date_is_null},
+  {"is_default", lodbc_date_is_default},
+  {"bind_col",   lodbc_date_bind_col},
+  {"bind_param", lodbc_date_bind_param},
+
+  {NULL, NULL}
+};
+
+//}
+
+#define ODBC_CONST(N) {#N, SQL_##N}
+
+struct INT_CONST{
+  char *name;
+  int  value;
+} lodbc_val_const[] = {
+  ODBC_CONST( PARAM_INPUT               ),
+  ODBC_CONST( PARAM_OUTPUT              ),
+  ODBC_CONST( PARAM_INPUT_OUTPUT        ),
+
+  ODBC_CONST( BIGINT                    ),
+  ODBC_CONST( INTEGER                   ),
+  ODBC_CONST( SMALLINT                  ),
+  ODBC_CONST( TINYINT                   ),
+  ODBC_CONST( BIT                       ),
+
+  ODBC_CONST( NUMERIC                   ),
+  ODBC_CONST( DECIMAL                   ),
+  ODBC_CONST( FLOAT                     ),
+  ODBC_CONST( REAL                      ),
+  ODBC_CONST( DOUBLE                    ),
+
+  ODBC_CONST( CHAR                      ),
+  ODBC_CONST( VARCHAR                   ),
+  ODBC_CONST( LONGVARCHAR               ),
+  ODBC_CONST( BINARY                    ),
+  ODBC_CONST( VARBINARY                 ),
+  ODBC_CONST( LONGVARBINARY             ),
+
+  ODBC_CONST( GUID                      ),
+
+  ODBC_CONST( DATE                      ),
+  ODBC_CONST( TIME                      ),
+  ODBC_CONST( DATETIME                  ),
+  ODBC_CONST( TIMESTAMP                 ),
+
+  ODBC_CONST( TYPE_DATE                 ),
+  ODBC_CONST( TYPE_TIME                 ),
+  ODBC_CONST( TYPE_TIMESTAMP            ),
+
+  ODBC_CONST( INTERVAL                  ),
+  ODBC_CONST( INTERVAL_YEAR             ),
+  ODBC_CONST( INTERVAL_MONTH            ),
+  ODBC_CONST( INTERVAL_DAY              ),
+  ODBC_CONST( INTERVAL_HOUR             ),
+  ODBC_CONST( INTERVAL_MINUTE           ),
+  ODBC_CONST( INTERVAL_SECOND           ),
+  ODBC_CONST( INTERVAL_YEAR_TO_MONTH    ),
+  ODBC_CONST( INTERVAL_DAY_TO_HOUR      ),
+  ODBC_CONST( INTERVAL_DAY_TO_MINUTE    ),
+  ODBC_CONST( INTERVAL_DAY_TO_SECOND    ),
+  ODBC_CONST( INTERVAL_HOUR_TO_MINUTE   ),
+  ODBC_CONST( INTERVAL_HOUR_TO_SECOND   ),
+  ODBC_CONST( INTERVAL_MINUTE_TO_SECOND ),
+
+  {0,0}
+};
+
+
+
 #define ctor_record(T) {#T, lodbc_##T##_create} 
 #define reg_type(T) create_meta(L, lodbc_##T); lua_pop(L, 1)
 
@@ -485,6 +693,7 @@ static const struct luaL_Reg lodbc_val_func[] = {
   ctor_record( double   ),
   ctor_record( char     ),
   ctor_record( binary   ),
+  ctor_record( date     ),
 
   {NULL, NULL}
 };
@@ -502,9 +711,18 @@ void lodbc_val_initlib (lua_State *L, int nup){
   reg_type( double   );
   reg_type( char     );
   reg_type( binary   );
+  reg_type( date     );
 
   lua_pop(L, nup);
   lua_pushvalue(L, -1 - nup);
   luaL_setfuncs(L, lodbc_val_func, 0);
+  {
+    struct INT_CONST *p = lodbc_val_const;
+    while(p->name){
+      lua_pushinteger(L, p->value);
+      lua_setfield(L, -2, p->name);
+      p++;
+    }
+  }
   lua_pop(L,1);
 }
