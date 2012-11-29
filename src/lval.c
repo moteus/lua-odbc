@@ -226,7 +226,7 @@ static int lodbc_bit_set(lua_State *L, lodbc_bit *val, int i, int opt){
     if(LUA_TNIL == lua_type(L, i)) return 0;
   }
 
-  if(lua_type(L,1) == LUA_TNUMBER)
+  if(lua_type(L,i) == LUA_TNUMBER)
     val->data = lua_tointeger(L, i)?1:0;
   else 
     val->data = lua_toboolean(L,i);
@@ -351,16 +351,18 @@ typedef struct lodbc_char{
 }lodbc_char;
 
 /*
- * значение val->ind необходимо корректировать после выполнения запроса в него записывается 
- * реальная длина строки в БД. Это значение может превышать  размер буфера. И если это значение 
- * не изменть перед следующем запросом можно получить AV.
- * перед запросом (выходной параметр / столбец):
+ * значение val->ind необходимо корректировать. После выполнения запроса в него записывается 
+ * реальная длина строки в БД(PARAM_OUTPUT). Это значение может превышать размер буфера. 
+ * И если это значение не изменть перед следующем запросом (PARAM_INPUT) можно получить AV.
+ * Пример. Перед запросом (выходной параметр / столбец):
  * val->size == 10 val->ind  == 0
  * после:
  * val->size == 10 val->ind  == 20 (скопировано только 10)
  * и если это значение использовать как входной параметр то мы получим AV.
  * Для избежания этого необходимо произвести какие либо дествия со значением, чтобы дать библиотеки 
  * скорректировать val->ind
+ * Это актуально только если исползовать одно значение как входной параметр после выполнения запроса 
+ * где это значение использовалось как выходной параметр.
  */
 
 static int lodbc_char_create(lua_State *L){
@@ -436,7 +438,7 @@ static int lodbc_char_size(lua_State *L){
 
 static int lodbc_char_length(lua_State *L){
   lodbc_char *val = lodbc_value(L, lodbc_char);
-  SQLULEN ind = lodbc_char_ind(val);
+  SQLLEN ind = lodbc_char_ind(val);
   lua_pushnumber(L, ind<0?0:ind);
   return 1;
 }
@@ -588,7 +590,7 @@ static int lodbc_binary_size(lua_State *L){
 
 static int lodbc_binary_length(lua_State *L){
   lodbc_binary *val = lodbc_value(L, lodbc_binary);
-  SQLULEN ind = lodbc_binary_ind(val);
+  SQLLEN ind = lodbc_binary_ind(val);
   lua_pushnumber(L, ind<0?0:ind);
   return 1;
 }
