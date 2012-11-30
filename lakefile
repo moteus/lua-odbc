@@ -11,6 +11,8 @@ else
   LUA_DIR  = ENV.LUA_DIR
 end
 
+DYNAMIC  = DYNAMIC or false
+
 INSTALL_DIR = INSTALL_DIR or J(LUA_DIR,'libs',PROJECT)
 
 DEFINES = {
@@ -26,7 +28,7 @@ lodbc = c.shared{PROJECT,
   exclude  = 'driverinfo';
   needs    = {LUA_NEED, 'odbc'},
   defines  = DEFINES,
-  dynamic  = false,
+  dynamic  = DYNAMIC,
   strip    = true,
   incdir   = {J('..', 'include')}
 }
