@@ -761,6 +761,12 @@ static int cnn_##FNAME(lua_State *L){      \
   return cnn_get_str_info_(L,cnn,(WHAT));  \
 }
 
+#define DEFINE_GET_UINT32_AS_BOOL_INFO(FNAME, WHAT, TVALUE)    \
+static int cnn_##FNAME(lua_State *L){                          \
+  lodbc_cnn *cnn = lodbc_getcnn (L);                           \
+  return cnn_get_equal_uint32_info_(L, cnn, (WHAT), (TVALUE)); \
+}
+
 #define DEFINE_GET_UINT16_AS_BOOL_INFO(FNAME, WHAT, TVALUE)    \
 static int cnn_##FNAME(lua_State *L){                          \
   lodbc_cnn *cnn = lodbc_getcnn (L);                           \
@@ -825,6 +831,38 @@ static int cnn_##FNAME(lua_State *L){            \
   return cnn_get_uint32_info_(L, cnn, (WHAT));   \
 }
 
+DEFINE_GET_UINT32_AS_MASK_INFO(supportsAsyncConnection, 
+  SQL_ASYNC_MODE, SQL_AM_CONNECTION
+)
+
+DEFINE_GET_UINT32_AS_MASK_INFO(supportsAsyncStatement, 
+  SQL_ASYNC_MODE, SQL_AM_STATEMENT
+)
+
+static int cnn_supportsAsync(lua_State *L){
+  lodbc_cnn *cnn = lodbc_getcnn (L);             \
+  SQLUINTEGER res;
+  SQLUSMALLINT dummy;
+  SQLUSMALLINT optnum = SQL_ASYNC_MODE;
+
+  SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
+  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
+  if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
+
+  dummy = 0;
+  if(res & SQL_AM_STATEMENT){ 
+    lua_pushliteral(L, "statement");
+    ++dummy;
+  }
+  if(res & SQL_AM_CONNECTION){
+    lua_pushliteral(L, "connection");
+    ++dummy;
+  }
+
+  if(dummy) return dummy;
+  lua_pushboolean(L, 0);
+  return 1;
+}
 
 
 DEFINE_GET_STRING_INFO(getIdentifierQuoteString,
@@ -2134,6 +2172,9 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"uint16info", cnn_get_uint16_info},
   {"strinfo",    cnn_get_str_info},
 
+  {"supportsAsync",                  cnn_supportsAsync},
+  {"supportsAsyncConnection",        cnn_supportsAsyncConnection},
+  {"supportsAsyncStatement",         cnn_supportsAsyncStatement},
 
   {"identifierQuoteString",                  cnn_getIdentifierQuoteString},
   {"catalogTerm",                            cnn_getCatalogTerm},

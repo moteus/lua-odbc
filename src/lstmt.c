@@ -163,6 +163,8 @@ static void stmt_clear_info_ (lua_State *L, lodbc_stmt *stmt){
   luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
   luaL_unref (L, LODBC_LUA_REGISTRY, stmt->coltypes);
 
+  stmt->aflags = LODBC_ASTATE_NONE;
+
   // don't need check error
   SQLFreeStmt(stmt->handle, SQL_RESET_PARAMS);
 
@@ -559,12 +561,17 @@ static int stmt_vfetch (lua_State *L) {
 
   rc = SQLFetch(hstmt);
   if (rc == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) {
+    stmt->aflags = LODBC_ASTATE_NONE;
     if(stmt->autoclose){
       stmt_close(L);
     }
     lua_pushboolean(L,0);
     return 1;
-  } else if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
+  } else if(rc == SQL_STILL_EXECUTING){
+    lua_pushliteral(L, "timeout");
+    stmt->aflags = LODBC_ASTATE_FETCH;
+    return 1;
+  }else if(lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
 
   lua_pushboolean(L,1);
   return 1;
@@ -834,9 +841,22 @@ static int stmt_execute(lua_State *L){
   }
 
   stmt->last_exec_ret = 0;
-  if(stmt->flags & LODBC_FLAG_PREPARED){
-    ret = SQLExecute (stmt->handle);
-    if(stmt->resultsetno != 0){// cols are not valid
+  if((!stmt->aflags) || (stmt->aflags == LODBC_ASTATE_EXECUTE)){
+    stmt->aflags = LODBC_ASTATE_NONE;
+    if(stmt->flags & LODBC_FLAG_PREPARED){
+      ret = SQLExecute (stmt->handle);
+      if(stmt->resultsetno != 0){// cols are not valid
+        luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
+        luaL_unref (L, LODBC_LUA_REGISTRY, stmt->coltypes);
+        stmt->colnames    = LUA_NOREF;
+        stmt->coltypes    = LUA_NOREF;
+        stmt->numcols     = 0;
+        stmt->resultsetno = 0;
+      }
+    }
+    else{
+      const char *statement = luaL_checkstring(L, 2);
+      ret = SQLExecDirect (stmt->handle, (char *) statement, SQL_NTS);
       luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
       luaL_unref (L, LODBC_LUA_REGISTRY, stmt->coltypes);
       stmt->colnames    = LUA_NOREF;
@@ -844,28 +864,25 @@ static int stmt_execute(lua_State *L){
       stmt->numcols     = 0;
       stmt->resultsetno = 0;
     }
-  }
-  else{
-    const char *statement = luaL_checkstring(L, 2);
-    luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
-    luaL_unref (L, LODBC_LUA_REGISTRY, stmt->coltypes);
-    stmt->colnames    = LUA_NOREF;
-    stmt->coltypes    = LUA_NOREF;
-    stmt->numcols     = 0;
-    stmt->resultsetno = 0;
+    if(ret == SQL_STILL_EXECUTING){
+      stmt->aflags = LODBC_ASTATE_EXECUTE;
+      lua_pushliteral(L,"timeout");
+      return 1;
+    }
 
-    ret = SQLExecDirect (stmt->handle, (char *) statement, SQL_NTS); 
+    if(
+      (lodbc_iserror(ret))&&
+      (ret != SQL_NEED_DATA)&&
+      (ret != LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND))
+      ){
+        return lodbc_fail(L, hSTMT, stmt->handle);
+    }
   }
+  else ret = SQL_SUCCESS;
 
-  if(
-    (lodbc_iserror(ret))&&
-    (ret != SQL_NEED_DATA)&&
-    (ret != LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND))
-  ){
-    return lodbc_fail(L, hSTMT, stmt->handle);
-  }
 
-  if(ret == SQL_NEED_DATA){
+  if((ret == SQL_NEED_DATA)||(stmt->aflags == LODBC_ASTATE_PARAMDATA)){
+    stmt->aflags = LODBC_ASTATE_NONE;
     while(1){
       par_data *par;
       ret = SQLParamData(stmt->handle, &par); // if done then this call execute statement
@@ -876,6 +893,11 @@ static int stmt_execute(lua_State *L){
       else{
          break;
       }
+    }
+    if(ret == SQL_STILL_EXECUTING){
+      stmt->aflags = LODBC_ASTATE_PARAMDATA;
+      lua_pushliteral(L,"timeout");
+      return 1;
     }
     if(
       (lodbc_iserror(ret))&&
@@ -924,6 +946,17 @@ static int stmt_execute(lua_State *L){
 
   return 1; // rowsaffected or self
 }
+
+static int stmt_cancel(lua_State *L){
+  lodbc_stmt *stmt = lodbc_getstmt(L);
+  SQLRETURN ret = SQLCancel(stmt->handle);
+  stmt->aflags = LODBC_ASTATE_NONE;
+  if(lodbc_iserror(ret)){
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  }
+  return lodbc_pass(L);
+}
+
 
 static int stmt_rowcount(lua_State *L){
   lodbc_stmt *stmt = lodbc_getstmt(L);
@@ -1175,6 +1208,7 @@ static const struct luaL_Reg lodbc_stmt_methods[] = {
   {"execute",   stmt_execute},
   {"prepare",   stmt_prepare},
   {"prepared",  stmt_prepared},
+  {"cancel",    stmt_cancel},
 
   {"bind",        stmt_bind},
   {"bindnum",     stmt_bind_number},

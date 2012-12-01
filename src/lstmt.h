@@ -8,6 +8,7 @@ typedef struct lodbc_cnn lodbc_cnn;
 
 typedef struct lodbc_stmt{
   uchar     flags;
+  uchar     aflags;
   SQLHSTMT  handle;
   int       coltypes, colnames;
   int       numcols, numpars;

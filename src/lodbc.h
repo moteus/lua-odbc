@@ -64,6 +64,17 @@ typedef unsigned char uchar;
 
 #define LODBC_FLAG_DESTROYONCLOSE   (uchar)0x10
 
+#define LODBC_ASTATE_NONE            (uchar)0
+
+// Выполняется асинхронный execute
+#define LODBC_ASTATE_EXECUTE         (uchar)1
+
+// Выполняется асинхронный ParamData
+#define LODBC_ASTATE_PARAMDATA       (uchar)2
+#define LODBC_ASTATE_FETCH           (uchar)3
+
+
+
 #define LODBC_LUA_REGISTRY lua_upvalueindex(1)
 
 #endif
