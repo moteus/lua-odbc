@@ -104,6 +104,8 @@ static int cnn_destroy (lua_State *L) {
     if (cnn->stmt_counter > 0)
       return luaL_error (L, LODBC_PREFIX"there are open statements");
 
+    SQLDisconnect(cnn->handle);
+
     if(!(cnn->flags & LODBC_FLAG_DONT_DESTROY)){
       SQLRETURN ret = SQLFreeHandle (hDBC, cnn->handle);
 

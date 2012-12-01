@@ -1,4 +1,4 @@
-local odbc = require "lodbc"
+local odbc = require "odbc.core"
 
 luasql = (type(luasql) == 'table') and luasql or {
   _COPYRIGHT   = "Copyright (C) 2006-2012 Kepler Project";

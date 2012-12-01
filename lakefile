@@ -1,4 +1,4 @@
-PROJECT = 'lodbc'
+PROJECT = 'odbc'
 
 LUA_RUNNER = LUA_EXE
 
@@ -7,7 +7,7 @@ if LUA_VER == '5.2' then
   LUA_DIR  = ENV.LUA_DIR_5_2 or ENV.LUA_DIR
   LUA_RUNNER  = 'lua52'
 else
-  LUA_NEED = 'lua'
+  LUA_NEED = 'lua51'
   LUA_DIR  = ENV.LUA_DIR
 end
 
@@ -22,7 +22,7 @@ DEFINES = {
   -- 'LODBC_FREE_PAR_AT_CLEAR';
 }
 
-lodbc = c.shared{PROJECT, 
+lodbc = c.shared{'core', 
   base     = 'src',
   src      = '*.c',
   exclude  = 'driverinfo';
@@ -36,7 +36,8 @@ lodbc = c.shared{PROJECT,
 target('build', lodbc)
 
 install = target('install', {
-  file.group{odir=J(INSTALL_DIR, 'share'         ); src = lodbc                   };
+  file.group{odir=J(INSTALL_DIR, 'share', PROJECT); src = lodbc                   };
+  file.group{odir=J(INSTALL_DIR, 'share'         ); src = J('lua', '*.*')         };
   file.group{odir=J(INSTALL_DIR, 'share', PROJECT); src = J('lua', 'lodbc', '*.*')};
   file.group{odir=J(INSTALL_DIR, 'test'); recurse = true; src = J('test', '*.*')  };
 })
@@ -54,7 +55,7 @@ end
 
 target('test', install, function()
   local test_dir = J(INSTALL_DIR,'test')
-  run(J(test_dir,'test-luasql.lua'), test_dir)
+  run(J(test_dir,'luasql','test-luasql.lua'), test_dir)
   run(J(test_dir,'test.lua'), test_dir)
 end)
 

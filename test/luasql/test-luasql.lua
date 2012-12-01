@@ -2,7 +2,7 @@
 -- See Copyright Notice in license.html
 -- $Id: test.lua,v 1.52 2008/06/30 10:43:03 blumf Exp $
 
-require "config"
+require "../config"
 
 
 TOTAL_FIELDS = 40
@@ -662,7 +662,7 @@ tests = {
 	-- luasql = require ("luasql."..driver)
 -- end
 
-luasql = require ("lodbc.luasql")
+luasql = require ("odbc.luasql")
 
 assert (luasql, "Could not load driver: no luasql table.")
 io.write (luasql._VERSION.." "..driver.." driver test.  "..luasql._COPYRIGHT.."\n")

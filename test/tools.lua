@@ -1,4 +1,4 @@
-odbc = require "lodbc"
+odbc = require "odbc"
 require "config"
 
 function is_dsn_exists(env, dsn_name)

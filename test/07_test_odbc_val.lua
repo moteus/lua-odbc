@@ -77,8 +77,8 @@ else module( TEST_NAME, package.seeall, lunit.testcase ) end
 
 local TEST_ROWS = 1
 local env, cnn, stmt
-local TEST_BIN_VAL  = ("\0"):rep(100)
-local TEST_STR_VAL = ("A"):rep(100)
+local TEST_BIN_VAL  = ("\0"):rep(50)
+local TEST_STR_VAL = ("A"):rep(50)
 
 local function fin_table()
   assert_equal(DROP_TABLE_RETURN_VALUE, drop_table(cnn))

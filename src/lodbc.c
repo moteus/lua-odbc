@@ -45,7 +45,7 @@ static int lodbc_getstmtmeta(lua_State *L){
 static const struct luaL_Reg lodbc_func[]   = {
   { "environment",  lodbc_environment_    },
 
-  { "getenvnmeta",  lodbc_getenvmeta   },
+  { "getenvmeta",   lodbc_getenvmeta   },
   { "getcnnmeta",   lodbc_getcnnmeta   },
   { "getstmtmeta",  lodbc_getstmtmeta  },
 
@@ -70,3 +70,8 @@ LODBC_EXPORT int luaopen_lodbc (lua_State *L){
   lodbc_init_lib(L, 0);
   return 1;
 }
+
+LODBC_EXPORT int luaopen_odbc_core (lua_State *L){
+  return luaopen_lodbc(L);
+}
+
