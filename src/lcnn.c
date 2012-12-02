@@ -650,6 +650,26 @@ static int cnn_has_txn(lua_State*L){
   return 1;
 }
 
+static int cnn_setasyncmode (lua_State *L) {
+  lodbc_cnn *cnn = lodbc_getcnn (L);
+  return cnn_set_uint_attr_(L,cnn,SQL_ATTR_ASYNC_ENABLE,
+    lua_toboolean (L, 2)?SQL_ASYNC_ENABLE_ON:SQL_ASYNC_ENABLE_OFF
+  );
+}
+
+static int cnn_getasyncmode(lua_State *L){
+  lodbc_cnn *cnn = lodbc_getcnn (L);
+  int ret = cnn_get_uint_attr_(L,cnn,SQL_ATTR_ASYNC_ENABLE);
+  if(lodbc_is_fail(L,ret)) return ret;
+  if(0 == ret){
+      lua_pushboolean(L, SQL_ASYNC_ENABLE_ON == SQL_ASYNC_ENABLE_DEFAULT);
+      return 1;
+  }
+  assert(1 == ret);
+  lua_pushboolean(L, SQL_ASYNC_ENABLE_ON == lua_tointeger(L,-1));
+  lua_remove(L,-2);
+  return 1;
+}
 
 //}
 
@@ -2143,6 +2163,8 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"settransactionisolation",cnn_settransactionisolation},
   {"setlogintimeout",        cnn_setlogintimeout},
   {"getlogintimeout",        cnn_getlogintimeout},
+  {"setasyncmode",           cnn_setasyncmode},
+  {"getasyncmode",           cnn_getasyncmode},
 
 
   {"dbmsname"       ,        cnn_getdbmsname},

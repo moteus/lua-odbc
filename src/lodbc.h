@@ -72,6 +72,7 @@ typedef unsigned char uchar;
 // Выполняется асинхронный ParamData
 #define LODBC_ASTATE_PARAMDATA       (uchar)2
 #define LODBC_ASTATE_FETCH           (uchar)3
+#define LODBC_ASTATE_NEXTRS          (uchar)4
 
 
 

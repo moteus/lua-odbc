@@ -996,8 +996,14 @@ static int stmt_moreresults(lua_State *L){
     return luaL_error (L, LODBC_PREFIX"there are no open cursor");
 
   ret = SQLMoreResults(stmt->handle);
+  stmt->aflags = LODBC_ASTATE_NONE;
   if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){
     lua_pushboolean(L, 0);
+    return 1;
+  }
+  if(ret == SQL_STILL_EXECUTING){
+    stmt->aflags = LODBC_ASTATE_NEXTRS;
+    lua_pushliteral(L, "timeout");
     return 1;
   }
   if(lodbc_iserror(ret)) return lodbc_fail(L, hSTMT, stmt->handle);
@@ -1196,6 +1202,31 @@ static int stmt_set_str_attr(lua_State*L){
 
 //}
 
+//{ some attributes
+
+static int stmt_set_asyncmode (lua_State *L) {
+  lodbc_stmt *stmt = lodbc_getstmt (L);
+  return stmt_set_uint_attr_(L,stmt,SQL_ATTR_ASYNC_ENABLE,
+    lua_toboolean (L, 2)?SQL_ASYNC_ENABLE_ON:SQL_ASYNC_ENABLE_OFF
+  );
+}
+
+static int stmt_get_asyncmode(lua_State *L){
+  lodbc_stmt *stmt = lodbc_getstmt (L);
+  int ret = stmt_get_uint_attr_(L,stmt,SQL_ATTR_ASYNC_ENABLE);
+  if(lodbc_is_fail(L,ret)) return ret;
+  if(0 == ret){
+      lua_pushboolean(L, SQL_ASYNC_ENABLE_ON == SQL_ASYNC_ENABLE_DEFAULT);
+      return 1;
+  }
+  assert(1 == ret);
+  lua_pushboolean(L, SQL_ASYNC_ENABLE_ON == lua_tointeger(L,-1));
+  lua_remove(L,-2);
+  return 1;
+}
+
+//}
+
 static const struct luaL_Reg lodbc_stmt_methods[] = {
   {"__gc",      stmt_destroy},
   {"destroy",   stmt_destroy},
@@ -1222,6 +1253,8 @@ static const struct luaL_Reg lodbc_stmt_methods[] = {
   {"bindnull",    stmt_bind_null},
   {"binddefault", stmt_bind_default},
 
+  {"setasyncmode",stmt_set_asyncmode},
+  {"getasyncmode",stmt_get_asyncmode},
 
   {"parcount",      stmt_parcount},
   {"nextresultset", stmt_moreresults},
