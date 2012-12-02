@@ -56,7 +56,7 @@ function FETCH_AND_ASSERT(cur)
   assert_equal('other', b)
   assert_equal('row',   c)
 
-  assert_nil(cur:nextresultset())
+  assert_false(cur:nextresultset())
   assert_true(cur:close())
 end
 

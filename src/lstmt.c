@@ -962,7 +962,10 @@ static int stmt_moreresults(lua_State *L){
     return luaL_error (L, LODBC_PREFIX"there are no open cursor");
 
   ret = SQLMoreResults(stmt->handle);
-  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
+  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){
+    lua_pushboolean(L, 0);
+    return 1;
+  }
   if(lodbc_iserror(ret)) return lodbc_fail(L, hSTMT, stmt->handle);
 
   luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);
