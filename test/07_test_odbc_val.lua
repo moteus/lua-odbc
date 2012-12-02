@@ -16,7 +16,7 @@ end
 local types = {
   'ubigint', 'sbigint', 'utinyint', 'stinyint', 'ushort', 'sshort', 
   'ulong', 'slong', 'float', 'double', 'date', 'time', 'bit',
-  'char', 'binary',
+  'char', 'binary', 'wchar'
 }
 
 local tsize = {
@@ -36,6 +36,7 @@ local tsize = {
   time     = 6,
   char     = nil,
   binary   = nil,
+  wchar    = nil,
 }
 
 function test_ctor()

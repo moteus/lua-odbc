@@ -559,7 +559,7 @@ typedef struct lodbc_binary{
 }lodbc_binary;
 
 static int lodbc_binary_create(lua_State *L){
-  lodbc_char *val;
+  lodbc_binary *val;
   SQLULEN len = 1;
   size_t sz;
   const char *data = NULL;
@@ -718,6 +718,185 @@ static const struct luaL_Reg lodbc_binary_methods[] = {
 
 //}
 
+//{ wchar
+
+#define lodbc_wchar_CTYPE  SQL_C_WCHAR
+#define lodbc_wchar_STYPE  SQL_WCHAR
+static const char* lodbc_wchar_NAME = LODBC_PREFIX"wchar";
+typedef struct lodbc_wchar{
+  SQLLEN   ind;
+  SQLULEN  size; // in bytes
+  SQLWCHAR data[1]; // size + 1 
+}lodbc_wchar;
+
+static int lodbc_wchar_create(lua_State *L){
+  lodbc_wchar *val;
+  SQLULEN len = 1;
+  size_t sz;
+  const char *data = NULL;
+  if(LUA_TNUMBER == lua_type(L, 1)){
+    len = lua_tointeger(L,1);
+    lua_remove(L,1);
+  }
+
+  if(LUA_TSTRING == lua_type(L, 1)){
+    data = lua_tolstring(L, 1, &sz);
+    if(sz > len)len = sz; 
+  }
+
+  if(0 == len) len = 1;
+  len *= sizeof(val->data[0]);
+
+  val = lutil_newudatap_impl(L, sizeof(lodbc_wchar) + len, lodbc_wchar_NAME);
+  val->size = len;
+  if(data){
+    val->ind = sz;
+    memcpy(val->data, data, val->ind);
+  }
+  else val->ind = SQL_NULL_DATA;
+
+  val->data[ val->size ] = '\0';
+
+  return 1;
+}
+
+// correct and return ind 
+static SQLLEN lodbc_wchar_ind(lodbc_wchar *val){
+  if(val->ind < 0) // SQL_NULL_DATA or SQL_DEFAULT
+    return val->ind;
+  if((SQLULEN)val->ind > val->size) val->ind = val->size;
+  return val->ind;
+}
+
+static int lodbc_wchar_get_value(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  SQLULEN ind = lodbc_wchar_ind(val);
+  if   (ind == SQL_NULL_DATA) lua_pushnil(L);
+  else if(ind == SQL_DEFAULT) lua_pushnil(L);
+  else lua_pushlstring(L, (const char*)&val->data[0], val->ind);
+  return 1;
+}
+
+static int lodbc_wchar_set_value(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  size_t len;
+  const char *data = luaL_checklstring(L,2,&len);
+  val->ind = (val->size > len)?len:val->size;
+  memcpy(val->data, data, val->ind);
+  return 0;
+}
+
+static int lodbc_wchar_set_null(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  val->ind = SQL_NULL_DATA;
+  return 0;
+}
+
+static int lodbc_wchar_set_default(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  val->ind = SQL_DEFAULT_PARAM;
+  return 0;
+}
+
+static int lodbc_wchar_size(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  size_t sz = val->size / sizeof(val->data[0]);
+  lua_pushnumber(L, sz);
+  return 1;
+}
+
+static int lodbc_wchar_length(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  SQLLEN ind = lodbc_wchar_ind(val);
+  size_t sz = ind<0?0:ind;
+  sz /= sizeof(val->data[0]);
+  lua_pushnumber(L, sz);
+  return 1;
+}
+
+static int lodbc_wchar_is_null(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  SQLULEN ind = lodbc_wchar_ind(val);
+  lua_pushboolean(L, (ind == SQL_NULL_DATA)?1:0);
+  return 1;
+}
+
+static int lodbc_wchar_is_default(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  SQLULEN ind = lodbc_wchar_ind(val);
+  lua_pushboolean(L, (ind == SQL_DEFAULT_PARAM)?1:0);
+  return 1;
+}
+
+static int lodbc_wchar_bind_col(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  SQLRETURN ret;
+  ret = SQLBindCol(stmt->handle, i,
+    lodbc_wchar_CTYPE, &val->data[0], val->size + sizeof(val->data[0]), &val->ind);
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
+static int lodbc_wchar_bind_param(lua_State *L){
+  lodbc_wchar   *val = lodbc_value(L, lodbc_wchar);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  int par_type        = optpartype(L,4);
+  SQLSMALLINT sqltype = luaL_optint(L, 5, lodbc_wchar_STYPE);
+  SQLULEN     len     = luaL_optint(L, 6, val->size);
+  SQLSMALLINT scale   = luaL_optint(L, 7, 0);
+
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i, par_type,
+    lodbc_wchar_CTYPE, sqltype, len, scale,
+    &val->data[0], val->size + sizeof(val->data[0]), &val->ind);
+
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
+static int lodbc_wchar_get_data(lua_State *L){
+  lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  SQLRETURN ret;
+  ret = SQLGetData(stmt->handle, i,
+    lodbc_wchar_CTYPE, &val->data[0], val->size + sizeof(val->data[0]), &val->ind);
+
+  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){
+    lua_pushboolean(L, 0);
+    return 1;
+  }
+
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
+static const struct luaL_Reg lodbc_wchar_methods[] = { 
+  {"set_null",   lodbc_wchar_set_null},
+  {"set_default",lodbc_wchar_set_default},
+  {"set",        lodbc_wchar_set_value},
+  {"get",        lodbc_wchar_get_value},
+  {"size",       lodbc_wchar_size},
+  {"length",     lodbc_wchar_length},
+  {"is_null",    lodbc_wchar_is_null},
+  {"is_default", lodbc_wchar_is_default},
+  {"bind_col",   lodbc_wchar_bind_col},
+  {"bind_param", lodbc_wchar_bind_param},
+  {"get_data",   lodbc_wchar_get_data},
+
+  {NULL, NULL}
+};
+
+//}
+
 #define ODBC_CONST(N) {#N, SQL_##N}
 
 struct INT_CONST{
@@ -746,6 +925,9 @@ struct INT_CONST{
   ODBC_CONST( BINARY                    ),
   ODBC_CONST( VARBINARY                 ),
   ODBC_CONST( LONGVARBINARY             ),
+  ODBC_CONST( WCHAR                     ),
+  ODBC_CONST( WVARCHAR                  ),
+  ODBC_CONST( WLONGVARCHAR              ),
 
   ODBC_CONST( GUID                      ),
 
@@ -792,6 +974,7 @@ static const struct luaL_Reg lodbc_val_func[] = {
   ctor_record( double   ),
   ctor_record( char     ),
   ctor_record( binary   ),
+  ctor_record( wchar    ),
   ctor_record( date     ),
   ctor_record( time     ),
   ctor_record( bit      ),
@@ -812,6 +995,7 @@ void lodbc_val_initlib (lua_State *L, int nup){
   reg_type( double   );
   reg_type( char     );
   reg_type( binary   );
+  reg_type( wchar    );
   reg_type( date     );
   reg_type( time     );
   reg_type( bit      );
