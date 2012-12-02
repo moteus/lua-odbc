@@ -102,7 +102,7 @@ local fix_types = {
   'ulong', 'slong', 'float', 'double', 'date', 'time', 'bit'
 }
 
-local buf_types = {'char', 'binary'}
+local buf_types = {'char', 'binary', 'wchar'}
 
 for _, tname in ipairs(fix_types) do
   Statement["vbind_col_" .. tname] = function(self, ...)
