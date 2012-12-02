@@ -327,7 +327,7 @@ static int stmt_bind_string_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par
   if(!par->value.strval.buf)
     return LODBC_ALLOCATE_ERROR(L);
   par->ind = SQL_NTS;
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_CHAR, par->sqltype, 0, 0, par->value.strval.buf, par->value.strval.bufsize, &par->ind);
+  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_CHAR, par->sqltype, par->value.strval.bufsize, 0, par->value.strval.buf, par->value.strval.bufsize, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
 
@@ -346,7 +346,7 @@ static int stmt_bind_binary_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par
   if(!par->value.strval.buf)
     return LODBC_ALLOCATE_ERROR(L);
   par->ind = buffer_len;
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BINARY, par->sqltype, 0, 0, par->value.strval.buf, par->value.strval.bufsize, &par->ind);
+  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BINARY, par->sqltype, par->value.strval.bufsize, 0, par->value.strval.buf, par->value.strval.bufsize, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
 
