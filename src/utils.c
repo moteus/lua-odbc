@@ -6,7 +6,8 @@ const char
   *LT_STRING  = "string",
   *LT_NUMBER  = "number",
   *LT_BOOLEAN = "boolean",
-  *LT_BINARY  = "binary";
+  *LT_BINARY  = "binary",
+  *LT_WSTRING = "string";
 
 
 
@@ -123,6 +124,8 @@ const char *lodbc_sqltypetolua (const SQLSMALLINT type) {
       return LT_NUMBER; // ???
 
     case SQL_WCHAR: case SQL_WVARCHAR:case SQL_WLONGVARCHAR:
+      return LT_WSTRING;
+
     case SQL_BINARY: case SQL_VARBINARY: case SQL_LONGVARBINARY:
       return LT_BINARY;	/* !!!!!! nao seria string? */
 

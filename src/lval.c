@@ -135,6 +135,24 @@ static int lodbc_##T##_bind_param(lua_State *L){                    \
   return 1;                                                         \
 }                                                                   \
                                                                     \
+static int lodbc_##T##_get_data(lua_State *L){                      \
+  lodbc_##T *val = lodbc_value(L, lodbc_##T);                       \
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);                       \
+  SQLSMALLINT i = luaL_checkint(L, 3);                              \
+  SQLRETURN ret = SQLGetData(stmt->handle, i,                       \
+    lodbc_##T##_CTYPE, &val->data, 0, &val->ind);                   \
+  if (lodbc_iserror(ret))                                           \
+    return lodbc_fail(L, hSTMT, stmt->handle);                      \
+                                                                    \
+  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){          \
+    lua_pushboolean(L, 0);                                          \
+    return 1;                                                       \
+  }                                                                 \
+                                                                    \
+  lua_settop(L, 1);                                                 \
+  return 1;                                                         \
+}                                                                   \
+                                                                    \
 static const struct luaL_Reg lodbc_##T##_methods[] = {              \
   {"set_null",   lodbc_##T##_set_null},                             \
   {"set_default",lodbc_##T##_set_default},                          \
@@ -145,6 +163,7 @@ static const struct luaL_Reg lodbc_##T##_methods[] = {              \
   {"size",       lodbc_##T##_size},                                 \
   {"bind_col",   lodbc_##T##_bind_col},                             \
   {"bind_param", lodbc_##T##_bind_param},                           \
+  {"get_data",   lodbc_##T##_get_data},                             \
                                                                     \
   {NULL, NULL},                                                     \
 };                                                                  \
@@ -490,6 +509,26 @@ static int lodbc_char_bind_param(lua_State *L){
   return 1;
 }
 
+static int lodbc_char_get_data(lua_State *L){
+  lodbc_char *val = lodbc_value(L, lodbc_char);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  SQLRETURN ret;
+  ret = SQLGetData(stmt->handle, i,
+    lodbc_char_CTYPE, &val->data[0], val->size + 1, &val->ind);
+
+  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){
+    lua_pushboolean(L, 0);
+    return 1;
+  }
+
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
+
 static const struct luaL_Reg lodbc_char_methods[] = { 
   {"set_null",   lodbc_char_set_null},
   {"set_default",lodbc_char_set_default},
@@ -501,6 +540,7 @@ static const struct luaL_Reg lodbc_char_methods[] = {
   {"is_default", lodbc_char_is_default},
   {"bind_col",   lodbc_char_bind_col},
   {"bind_param", lodbc_char_bind_param},
+  {"get_data",   lodbc_char_get_data},
 
   {NULL, NULL}
 };
@@ -641,6 +681,25 @@ static int lodbc_binary_bind_param(lua_State *L){
   return 1;
 }
 
+static int lodbc_binary_get_data(lua_State *L){
+  lodbc_binary *val = lodbc_value(L, lodbc_binary);
+  lodbc_stmt  *stmt = lodbc_getstmt_at(L, 2);
+  SQLSMALLINT i = luaL_checkint(L, 3);
+  SQLRETURN ret;
+  ret = SQLGetData(stmt->handle, i,
+    lodbc_binary_CTYPE, &val->data[0], val->size, &val->ind);
+
+  if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)){
+    lua_pushboolean(L, 0);
+    return 1;
+  }
+
+  if (lodbc_iserror(ret))
+    return lodbc_fail(L, hSTMT, stmt->handle);
+  lua_settop(L, 1);
+  return 1;
+}
+
 static const struct luaL_Reg lodbc_binary_methods[] = { 
   {"set_null",   lodbc_binary_set_null},
   {"set_default",lodbc_binary_set_default},
@@ -652,6 +711,7 @@ static const struct luaL_Reg lodbc_binary_methods[] = {
   {"is_default", lodbc_binary_is_default},
   {"bind_col",   lodbc_binary_bind_col},
   {"bind_param", lodbc_binary_bind_param},
+  {"get_data",   lodbc_binary_get_data},
 
   {NULL, NULL}
 };

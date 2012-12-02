@@ -225,7 +225,10 @@ function test_stmt()
   cnn:commit()
 
   assert_equal(0,         stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  cnn:commit()
 
+  cnn:setautocommit(true)
+  assert_true(stmt:destroy())
   fin_table()
 end
 

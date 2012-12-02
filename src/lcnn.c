@@ -1884,23 +1884,28 @@ static int cnn_gettables(lua_State *L){
 
 static int cnn_gettabletypes(lua_State *L){
   lua_settop(L, 1);
-  lua_pushnil(L);
-  lua_pushnil(L);
-  lua_pushnil(L);
+  lua_pushliteral(L,"");
+  lua_pushliteral(L,"");
+  lua_pushliteral(L,"");
   lua_pushliteral(L,"%");
   return cnn_gettables(L);
 }
 
 static int cnn_getschemas(lua_State *L){
   lua_settop(L, 1);
-  lua_pushnil(L);
+  lua_pushliteral(L,"");
   lua_pushliteral(L,"%");
+  lua_pushliteral(L,"");
+  lua_pushliteral(L,"");
   return cnn_gettables(L);
 }
 
 static int cnn_getcatalogs(lua_State *L){
   lua_settop(L, 1);
   lua_pushliteral(L,"%");
+  lua_pushliteral(L,"");
+  lua_pushliteral(L,"");
+  lua_pushliteral(L,"");
   return cnn_gettables(L);
 }
 
