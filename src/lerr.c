@@ -111,6 +111,33 @@ static int err_tostring(lua_State *L){
   return 1;
 }
 
+static int is_odbc_err(lua_State *L, int i){
+  int ret;
+  if(!lua_istable(L, i)) return 0;
+  lua_getmetatable(L, i);
+  if(!lua_istable(L,-1)){
+    lua_pop(L, 1);
+    return 0;
+  }
+  lutil_getmetatablep(L, LODBC_ERR);
+  ret = lua_rawequal(L, -1, -2);
+  lua_pop(L, 2);
+  return ret;
+}
+
+static int lodbc_assert (lua_State *L){
+  if (!lua_toboolean(L, 1)){
+    if(is_odbc_err(L, 2)){
+      lua_remove(L, 1);
+      lua_settop(L, 1);
+      err_tostring(L);
+      return lua_error(L);
+    }
+    return luaL_error(L, "%s", luaL_optstring(L, 2, "assertion failed!"));
+  }
+  return lua_gettop(L);
+}
+
 static int err_index(lua_State *L){
   luaL_checktype(L, 1, LUA_TTABLE);
   luaL_checkany(L,2);
@@ -128,6 +155,12 @@ static const struct luaL_Reg lodbc_err_meta[] = {
   {NULL,NULL}
 };
 
+static const struct luaL_Reg lodbc_err_func[] = {
+  {"assert", lodbc_assert},
+
+  {NULL, NULL}
+};
+
 void lodbc_err_initlib (lua_State *L, int nup){
 #ifdef LODBC_ERROR_AS_OBJECT
   lutil_newmetatablep(L, LODBC_ERR);
@@ -135,6 +168,10 @@ void lodbc_err_initlib (lua_State *L, int nup){
   luaL_setfuncs (L, lodbc_err_meta, nup); /* define methods */
   lua_pushstring(L, LODBC_ERR);
   lua_setfield(L,-2,"__metatable");
+  lua_pop(L, 1);
+
+  lua_pushvalue(L, -1 - nup);
+  luaL_setfuncs(L, lodbc_err_func, 0);
   lua_pop(L, 1);
 #endif
 }
