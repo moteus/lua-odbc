@@ -112,6 +112,7 @@ static int stmt_close(lua_State *L){
     //! @todo check ret code
     stmt->flags &= ~LODBC_FLAG_OPENED;
   }
+  stmt->aflags = LODBC_ASTATE_NONE;
   return lodbc_pass(L);
 }
 
