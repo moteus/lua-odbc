@@ -16,7 +16,7 @@ int lodbc_push_diagnostics_obj(lua_State *L, const SQLSMALLINT type, const SQLHA
   SQLINTEGER NativeError;
   SQLSMALLINT MsgSize, i;
   SQLRETURN ret;
-  char Msg[SQL_MAX_MESSAGE_LENGTH];
+  SQLCHAR Msg[SQL_MAX_MESSAGE_LENGTH];
 
   lua_newtable(L);
   i = 1;
@@ -24,8 +24,8 @@ int lodbc_push_diagnostics_obj(lua_State *L, const SQLSMALLINT type, const SQLHA
     ret = SQLGetDiagRec(type, handle, i, State, &NativeError, Msg, sizeof(Msg), &MsgSize);
     if (ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) break;
     lua_newtable(L);
-    lua_pushlstring(L, Msg, MsgSize); lua_setfield(L, -2, "message");
-    lua_pushlstring(L, State, 5);     lua_setfield(L, -2, "state");
+    lua_pushlstring(L, (char*)Msg, MsgSize); lua_setfield(L, -2, "message");
+    lua_pushlstring(L, (char*)State, 5);     lua_setfield(L, -2, "state");
     lua_pushnumber(L, NativeError);   lua_setfield(L, -2, "code");
     lua_rawseti(L,-2, i);
     i++;
@@ -58,7 +58,7 @@ int lodbc_push_diagnostics_str(lua_State *L, const SQLSMALLINT type, const SQLHA
   SQLINTEGER NativeError;
   SQLSMALLINT MsgSize, i;
   SQLRETURN ret;
-  char Msg[SQL_MAX_MESSAGE_LENGTH];
+  SQLCHAR Msg[SQL_MAX_MESSAGE_LENGTH];
   luaL_Buffer b;
 
   luaL_buffinit(L, &b);
@@ -67,9 +67,9 @@ int lodbc_push_diagnostics_str(lua_State *L, const SQLSMALLINT type, const SQLHA
     ret = SQLGetDiagRec(type, handle, i, State, &NativeError, Msg, sizeof(Msg), &MsgSize);
     if (ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) break;
     if(i > 1) luaL_addchar(&b, '\n');
-    luaL_addlstring(&b, Msg, MsgSize);
+    luaL_addlstring(&b, (char*)Msg, MsgSize);
     luaL_addchar(&b, '\n');
-    luaL_addlstring(&b, State, 5);
+    luaL_addlstring(&b, (char*)State, 5);
     i++;
   }
   luaL_pushresult(&b);

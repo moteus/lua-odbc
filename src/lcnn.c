@@ -10,7 +10,6 @@
 LODBC_EXPORT const char *LODBC_CNN = LODBC_PREFIX "Connection";
 
 //{ declarations
-static int cnn_create (lua_State *L, lodbc_env *env, SQLHDBC hdbc);
 static int cnn_supportsTransactions(lua_State *L);
 //}
 
@@ -107,7 +106,10 @@ static int cnn_destroy (lua_State *L) {
     SQLDisconnect(cnn->handle);
 
     if(!(cnn->flags & LODBC_FLAG_DONT_DESTROY)){
-      SQLRETURN ret = SQLFreeHandle (hDBC, cnn->handle);
+#ifdef LODBC_CHECK_ERROR_ON_DESTROY
+      SQLRETURN ret =
+#endif
+      SQLFreeHandle (hDBC, cnn->handle);
 
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
       if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
@@ -158,15 +160,15 @@ static int conn_after_connect(lua_State *L){
   int top = lua_gettop(L);
   memset(&cnn->supports[0],0,LODBC_CNN_SUPPORT_MAX * sizeof(cnn->supports[0]));
 
-  {SQLSMALLINT val = 0;
+  {SQLUSMALLINT val = 0;
   SQLRETURN ret = SQLGetFunctions(cnn->handle,SQL_API_SQLPREPARE,&val);
   if(!lodbc_iserror(ret)) cnn->supports[LODBC_CNN_SUPPORT_PREPARE] = val?1:0;}
 
-  {SQLSMALLINT val = 0;
+  {SQLUSMALLINT val = 0;
   SQLRETURN ret = SQLGetFunctions(cnn->handle,SQL_API_SQLBINDPARAMETER,&val);
   if(!lodbc_iserror(ret)) cnn->supports[LODBC_CNN_SUPPORT_BINDPARAM] = val?1:0;}
 
-  {SQLSMALLINT val = 0;
+  {SQLUSMALLINT val = 0;
   SQLRETURN ret = SQLGetFunctions(cnn->handle,SQL_API_SQLNUMPARAMS,&val);
   if(!lodbc_iserror(ret)) cnn->supports[LODBC_CNN_SUPPORT_NUMPARAMS] = val?1:0;}
 
@@ -189,19 +191,19 @@ static int conn_after_connect(lua_State *L){
 }
 
 static int cnn_driverconnect(lua_State *L){
-  const MIN_CONNECTSTRING_SIZE = 1024; // msdn say
+  const int MIN_CONNECTSTRING_SIZE = 1024; // msdn say
 
   lodbc_cnn *cnn = lodbc_getcnn(L);
   size_t connectStringSize;
   const char *connectString = lua_istable(L,2)?table_to_cnnstr(L,2),luaL_checklstring(L, 2, &connectStringSize):
                                                                     luaL_checklstring(L, 2, &connectStringSize);
   SQLUSMALLINT drvcompl = SQL_DRIVER_NOPROMPT;
-  char *buf;
+  SQLCHAR *buf;
   SQLSMALLINT bufSize;
   SQLHDBC hdbc = cnn->handle;
   SQLRETURN ret;
 
-  buf = malloc(MIN_CONNECTSTRING_SIZE);
+  buf = malloc(MIN_CONNECTSTRING_SIZE * sizeof(SQLCHAR));
   if(!buf) return LODBC_ALLOCATE_ERROR(L);
 
   ret = SQLDriverConnect(hdbc,0,(SQLPOINTER)connectString,connectStringSize,
@@ -214,7 +216,7 @@ static int cnn_driverconnect(lua_State *L){
   }
 
   lua_pushvalue(L,1);
-  lua_pushstring(L,buf);
+  lua_pushstring(L,(char*)buf);
   free(buf);
 
   conn_after_connect(L);
@@ -227,8 +229,8 @@ static int cnn_connect (lua_State *L) {
   const char *username = luaL_optstring (L, 3, NULL);
   const char *password = luaL_optstring (L, 4, NULL);
 
-  SQLRETURN ret = SQLConnect (cnn->handle, (char *) sourcename, SQL_NTS,
-    (char *) username, SQL_NTS, (char *) password, SQL_NTS);
+  SQLRETURN ret = SQLConnect (cnn->handle, (SQLCHAR *) sourcename, SQL_NTS,
+    (SQLCHAR *) username, SQL_NTS, (SQLCHAR *) password, SQL_NTS);
   if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
 
   conn_after_connect(L);
@@ -298,7 +300,7 @@ static int cnn_set_str_attr_(lua_State*L, lodbc_cnn *cnn, SQLINTEGER optnum,
 
 static int cnn_get_uint32_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum){
   SQLUINTEGER res;
-  SQLUSMALLINT dummy;
+  SQLSMALLINT dummy;
   SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
   if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
   if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
@@ -308,7 +310,7 @@ static int cnn_get_uint32_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum
 
 static int cnn_get_uint16_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum){
     SQLUSMALLINT res;
-    SQLUSMALLINT dummy;
+    SQLSMALLINT dummy;
     SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
     if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
     if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
@@ -317,7 +319,7 @@ static int cnn_get_uint16_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum
 }
 
 static int cnn_get_str_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum){
-    SQLUSMALLINT got;
+    SQLSMALLINT got;
     char buffer[256];
     SQLRETURN ret;
 
@@ -345,7 +347,7 @@ static int cnn_get_str_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum){
 static int cnn_get_equal_char_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT optnum,
     char value
 ){
-    SQLUSMALLINT got;
+    SQLSMALLINT got;
     char buffer[2];
     SQLRETURN ret;
 
@@ -361,7 +363,7 @@ static int cnn_get_equal_uint32_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT 
     SQLUINTEGER value
 ){
     SQLUINTEGER res;
-    SQLUSMALLINT dummy;
+    SQLSMALLINT dummy;
     SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
     if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
     if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
@@ -374,7 +376,7 @@ static int cnn_get_and_uint32_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT op
     SQLUINTEGER value
 ){
     SQLUINTEGER res;
-    SQLUSMALLINT dummy;
+    SQLSMALLINT dummy;
     SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
     if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
     if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
@@ -387,7 +389,7 @@ static int cnn_get_equal_uint16_info_(lua_State*L, lodbc_cnn *cnn, SQLUSMALLINT 
     SQLUSMALLINT value
 ){
     SQLUSMALLINT res;
-    SQLUSMALLINT dummy;
+    SQLSMALLINT dummy;
     SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
     if(ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return 0;
     if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
@@ -862,7 +864,7 @@ DEFINE_GET_UINT32_AS_MASK_INFO(supportsAsyncStatement,
 static int cnn_supportsAsync(lua_State *L){
   lodbc_cnn *cnn = lodbc_getcnn (L);             \
   SQLUINTEGER res;
-  SQLUSMALLINT dummy;
+  SQLSMALLINT dummy;
   SQLUSMALLINT optnum = SQL_ASYNC_MODE;
 
   SQLRETURN ret = SQLGetInfo(cnn->handle, optnum, (SQLPOINTER)&res, sizeof(res), &dummy);
@@ -1860,7 +1862,7 @@ static int cnn_updatesAreDetected(lua_State *L){
     if (numcols > 0)\
       return lodbc_statement_create (L,hstmt,cnn,1,1,numcols,1);\
     else { \
-      SQLINTEGER numrows;\
+      SQLLEN numrows;\
       ret = SQLRowCount(hstmt, &numrows);\
       if (lodbc_iserror(ret)) {\
         ret = lodbc_fail(L, hSTMT, hstmt);\

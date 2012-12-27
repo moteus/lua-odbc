@@ -301,7 +301,7 @@ static int lodbc_date_get(lua_State *L, lodbc_date *val){
 #ifdef _MSC_VER
   sprintf_s(str,sizeof(str),
 #else
-  sscanf(str,
+  sprintf(str,
 #endif
   "%.4d-%.2d-%.2d", val->data.year, val->data.month, val->data.day);
   lua_pushstring(L, str);
@@ -349,7 +349,7 @@ static int lodbc_time_get(lua_State *L, lodbc_time *val){
 #ifdef _MSC_VER
   sprintf_s(str,sizeof(str),
 #else
-  sscanf(str,
+  sprintf(str,
 #endif
   "%.2d:%.2d:%.2d", val->data.hour, val->data.minute, val->data.second);
   lua_pushstring(L, str);
@@ -424,7 +424,7 @@ static int lodbc_char_get_value(lua_State *L){
   SQLULEN ind = lodbc_char_ind(val);
   if   (ind == SQL_NULL_DATA) lua_pushnil(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
-  else lua_pushlstring(L, val->data, val->ind);
+  else lua_pushlstring(L, (char*)val->data, val->ind);
   return 1;
 }
 
@@ -597,7 +597,7 @@ static int lodbc_binary_get_value(lua_State *L){
   SQLULEN ind = lodbc_binary_ind(val);
   if   (ind == SQL_NULL_DATA) lua_pushnil(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
-  else lua_pushlstring(L, val->data, val->ind);
+  else lua_pushlstring(L, (char*)val->data, val->ind);
   return 1;
 }
 

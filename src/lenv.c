@@ -65,7 +65,10 @@ static int env_destroy (lua_State *L) {
       return luaL_error (L, LODBC_PREFIX"there are open connections");
 
     if(!(env->flags & LODBC_FLAG_DONT_DESTROY)){
-      SQLRETURN ret = SQLFreeHandle (hENV, env->handle);
+#ifdef LODBC_CHECK_ERROR_ON_DESTROY
+      SQLRETURN ret =
+#endif
+      SQLFreeHandle (hENV, env->handle);
 
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
       if (lodbc_iserror(ret)) return lodbc_fail(L, hENV, env->handle);

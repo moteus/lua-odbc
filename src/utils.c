@@ -145,7 +145,7 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
   switch (type) {/* deal with data according to type */
     case 'u': { /* nUmber */
       lua_Number num;
-      SQLINTEGER got;
+      SQLLEN got;
       SQLRETURN rc = SQLGetData(hstmt, i, LODBC_C_NUMBER, &num, 0, &got);
       if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
       if (got == SQL_NULL_DATA) lua_pushnil(L);
@@ -154,7 +154,7 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
     }
     case 'o': { /* bOol */
       unsigned char b;
-      SQLINTEGER got;
+      SQLLEN got;
       SQLRETURN rc = SQLGetData(hstmt, i, SQL_C_BIT, &b, 0, &got);
       if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
       if (got == SQL_NULL_DATA) lua_pushnil(L);
@@ -163,7 +163,7 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
     }
     case 't': case 'i': {/* sTring, bInary */
       SQLSMALLINT stype = (type == 't') ? SQL_C_CHAR : SQL_C_BINARY;
-      SQLINTEGER got;
+      SQLLEN got;
       char *buffer;
       luaL_Buffer b;
       SQLRETURN rc;
