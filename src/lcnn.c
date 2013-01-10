@@ -5,6 +5,7 @@
 #include "lenv.h"
 #include "lstmt.h"
 #include "lerr.h"
+#include "libopt.h"
 #include "driverinfo.h"
 
 LODBC_EXPORT const char *LODBC_CNN = LODBC_PREFIX "Connection";
@@ -74,6 +75,17 @@ lodbc_cnn *lodbc_getcnn_at (lua_State *L, int i) {
 
 //{ ctor/dtor
 
+static int create_stmt_list(lua_State *L){
+  int top = lua_gettop(L);
+  lua_newtable(L);
+  lua_newtable(L);
+  lua_pushliteral(L, "k");
+  lua_setfield(L, -2, "__mode");
+  lua_setmetatable(L,-2);
+  assert((top+1) == lua_gettop(L));
+  return luaL_ref(L, LODBC_LUA_REGISTRY);
+}
+
 int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_idx, uchar own){
   lodbc_cnn *cnn;
   if((!env) && env_idx) env = lodbc_getenv_at(L, env_idx);
@@ -90,7 +102,21 @@ int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_
     lua_pushvalue(L, env_idx);
     cnn->env_ref = luaL_ref(L, LODBC_LUA_REGISTRY);
   }
+  cnn->stmt_ref = LUA_NOREF;
+  if(LODBC_OPT_INT(CNN_AUTOCLOSESTMT)){
+    cnn->stmt_ref = create_stmt_list(L);
+  }
   return 1;
+}
+
+static void call_stmt_destroy(lua_State *L){
+  int top = lua_gettop(L);
+  assert(lutil_checkudatap(L, -1, LODBC_STMT));
+  lua_getfield(L, -1, "destroy");
+  assert(lua_isfunction(L, -1));
+  lua_pushvalue(L, -2);
+  lua_pcall(L,1,0,0);
+  assert(lua_gettop(L) == top);
 }
 
 static int cnn_destroy (lua_State *L) {
@@ -98,21 +124,30 @@ static int cnn_destroy (lua_State *L) {
   luaL_argcheck (L, cnn != NULL, 1, LODBC_PREFIX "connection expected");
 
   if(!(cnn->flags & LODBC_FLAG_DESTROYED)){
-    //! @todo autoclose statements
+    if(LUA_NOREF != cnn->stmt_ref){
+      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
+      assert(lua_istable(L, -1));
+      lua_pushnil(L);
+      while(lua_next(L, -2)){
+        lua_pop(L, 1); // we do not need value
+        call_stmt_destroy(L);
+      }
+    }
 
     if (cnn->stmt_counter > 0)
       return luaL_error (L, LODBC_PREFIX"there are open statements");
 
-    SQLDisconnect(cnn->handle);
-
     if(!(cnn->flags & LODBC_FLAG_DONT_DESTROY)){
+      SQLDisconnect(cnn->handle);
+
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
-      SQLRETURN ret =
+      { SQLRETURN ret =
 #endif
       SQLFreeHandle (hDBC, cnn->handle);
 
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
       if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
+      }
 #endif
 
       cnn->handle = SQL_NULL_HANDLE;
@@ -123,6 +158,9 @@ static int cnn_destroy (lua_State *L) {
     }
     luaL_unref(L, LODBC_LUA_REGISTRY, cnn->env_ref);
     cnn->env_ref = LUA_NOREF;
+
+    luaL_unref(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
+    cnn->stmt_ref = LUA_NOREF;
 
     cnn->flags |= LODBC_FLAG_DESTROYED;
   }
@@ -670,6 +708,30 @@ static int cnn_getasyncmode(lua_State *L){
   assert(1 == ret);
   lua_pushboolean(L, SQL_ASYNC_ENABLE_ON == lua_tointeger(L,-1));
   lua_remove(L,-2);
+  return 1;
+}
+
+static int cnn_setautoclosestmt(lua_State *L){
+  lodbc_cnn *cnn = lodbc_getcnn (L);
+  int val = lua_toboolean(L, 2);
+
+  if(val && (cnn->stmt_ref == LUA_NOREF)){
+    cnn->stmt_ref = create_stmt_list(L);
+    return lodbc_pass(L);
+  }
+
+  if((!val) && (cnn->stmt_ref != LUA_NOREF)){
+    luaL_unref(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
+    cnn->stmt_ref = LUA_NOREF;
+    return lodbc_pass(L);
+  }
+
+  return lodbc_pass(L);
+}
+
+static int cnn_getautoclosestmt(lua_State *L){
+  lodbc_cnn *cnn = lodbc_getcnn (L);
+  lua_pushboolean(L, (cnn->stmt_ref == LUA_NOREF)?0:1);
   return 1;
 }
 
@@ -2168,6 +2230,8 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"setasyncmode",           cnn_setasyncmode},
   {"getasyncmode",           cnn_getasyncmode},
 
+  {"setautoclosestmt",       cnn_setautoclosestmt},
+  {"getautoclosestmt",       cnn_getautoclosestmt},
 
   {"dbmsname"       ,        cnn_getdbmsname},
   {"dbmsver"        ,        cnn_getdbmsver},

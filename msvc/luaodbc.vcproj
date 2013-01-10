@@ -199,6 +199,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\libopt.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\lodbc.c"
 				>
 			</File>
@@ -242,6 +246,10 @@
 			</File>
 			<File
 				RelativePath="..\src\lerr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\libopt.h"
 				>
 			</File>
 			<File

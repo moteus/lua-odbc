@@ -5,6 +5,7 @@
 #include "lcnn.h"
 #include "lerr.h"
 #include "parlist.h"
+#include "libopt.h"
 
 LODBC_EXPORT const char *LODBC_STMT = LODBC_PREFIX "Statement";
 
@@ -29,7 +30,9 @@ int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, lodbc_cnn *cnn, int cn
   if((!cnn) && cnn_idx) cnn = lodbc_getcnn_at(L, cnn_idx);
   stmt = lutil_newudatap(L, lodbc_stmt, LODBC_STMT);
   memset(stmt, 0, sizeof(lodbc_stmt));
-  if(!own) cnn->flags |= LODBC_FLAG_DONT_DESTROY;
+  if(!own) stmt->flags |= LODBC_FLAG_DONT_DESTROY;
+  if(LODBC_OPT_INT(STMT_DESTROYONCLOSE)) stmt->flags |= LODBC_FLAG_DESTROYONCLOSE;
+
   stmt->handle   = hstmt;
   stmt->colnames = stmt->coltypes = LUA_NOREF;
   stmt->numcols  = ncols;
@@ -39,6 +42,13 @@ int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, lodbc_cnn *cnn, int cn
   if(cnn){
     stmt->cnn = cnn;
     cnn->stmt_counter++;
+    if(cnn->stmt_ref != LUA_NOREF){
+      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
+      lua_pushvalue(L, -2);
+      lua_pushboolean(L, 1);
+      lua_rawset(L, -3);
+      lua_pop(L,1);
+    }
   }
 
   stmt->cnn_ref = LUA_NOREF;
@@ -81,6 +91,13 @@ static int stmt_destroy (lua_State *L) {
     if(stmt->cnn){
       stmt->cnn->stmt_counter--;
       assert(stmt->cnn->stmt_counter >= 0);
+      if(stmt->cnn->stmt_ref != LUA_NOREF){
+        lua_rawgeti(L, LODBC_LUA_REGISTRY, stmt->cnn->stmt_ref);
+        lua_pushvalue(L, -2);
+        lua_pushnil(L);
+        lua_rawset(L, -3);
+        lua_pop(L,1);
+      }
     }
 
     luaL_unref (L, LODBC_LUA_REGISTRY, stmt->colnames);

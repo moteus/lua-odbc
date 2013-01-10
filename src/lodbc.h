@@ -74,8 +74,10 @@ typedef unsigned char uchar;
 #define LODBC_ASTATE_FETCH           (uchar)3
 #define LODBC_ASTATE_NEXTRS          (uchar)4
 
-
-
-#define LODBC_LUA_REGISTRY lua_upvalueindex(1)
+#ifdef LODBC_USE_LUA_REGISTRY
+#  define LODBC_LUA_REGISTRY LUA_REGISTRYINDEX
+#else
+#  define LODBC_LUA_REGISTRY lua_upvalueindex(1)
+#endif
 
 #endif
