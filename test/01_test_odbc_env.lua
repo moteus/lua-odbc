@@ -1,7 +1,9 @@
 require "config"
 require "tools"
 
-local lunit = require "lunitx"
+local local_run_test = lunit and function() end or run_test
+local lunit = require "lunit"
+local arg = {...}
 
 local TEST_NAME = 'Environment test'
 if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
@@ -58,3 +60,5 @@ function test_destroy()
   assert_error(function() env:drivers() end)
   assert_true(env:destroy())
 end
+
+local_run_test(arg)

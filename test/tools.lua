@@ -1,6 +1,19 @@
 odbc = require "odbc"
 require "config"
 
+function run_test(arg)
+  local _, emsg = xpcall(function()
+    lunit.main(arg)
+  end, debug.traceback)
+  if emsg then
+    print(emsg)
+    os.exit(1)
+  end
+  if lunit.stats.failed > 0 then
+    os.exit(1)
+  end
+end
+
 function is_dsn_exists(env, dsn_name)
   local cnt, d = return_count(env:datasources(function(dsn) 
     if dsn:upper() == dsn_name:upper() then return dsn end

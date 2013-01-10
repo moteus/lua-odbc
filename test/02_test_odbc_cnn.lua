@@ -1,7 +1,9 @@
 require "config"
 require "tools"
 
-local lunit = require "lunitx"
+local local_run_test = lunit and function() end or run_test
+local lunit = require "lunit"
+local arg = {...}
 
 local TEST_NAME = 'Connection test'
 if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
@@ -59,3 +61,4 @@ function test_connect()
   assert_true(not cnn:connected())
 end
 
+local_run_test(arg)

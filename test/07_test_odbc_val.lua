@@ -1,7 +1,9 @@
 require "config"
 require "tools"
 
-local lunit = require "lunitx"
+local local_run_test = lunit and function() end or run_test
+local lunit = require "lunit"
+local arg = {...}
 
 local TEST_NAME = 'Value test'
 if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
@@ -139,3 +141,5 @@ function test_overflow()
   assert_equal(subBin, binVal:get())
   assert_equal(subStr, strVal:get())
 end
+
+local_run_test(arg)
