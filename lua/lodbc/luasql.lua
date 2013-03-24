@@ -10,6 +10,24 @@ local Environment = {__metatable = "LuaSQL: you're not allowed to get this metat
 local Connection  = {__metatable = "LuaSQL: you're not allowed to get this metatable"} Connection.__index = Connection
 local Cursor      = {__metatable = "LuaSQL: you're not allowed to get this metatable"} Cursor.__index = Cursor
 
+local unpack = unpack or table.unpack
+
+local function conv_null(...)
+  if odbc.NULL == nil then return ... end
+  if type((...)) == table then
+    local t = (...)
+    for k,v in pairs(t)do
+      if v == odbc.NULL then t[k] = nil end
+    end
+    return t
+  end
+  local t, n = {...}, select('#', ...)
+  for i = 1, n do
+    if t[i] == odbc.NULL then t[i] = nil end
+  end
+  return unpack(t, 1, n)
+end
+
 local Environment_new, Connection_new, Cursor_new
 
 function Environment_new()
@@ -88,7 +106,7 @@ function Cursor:close()
 end
 
 function Cursor:fetch(...)
-  return self.private_.stmt:fetch(...)
+  return conv_null(self.private_.stmt:fetch(...))
 end
 
 function Cursor:getcolnames()
@@ -102,5 +120,5 @@ end
 luasql.odbc = function()
   return Environment_new()
 end
-
+ 
 return luasql
