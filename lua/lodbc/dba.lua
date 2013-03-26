@@ -63,18 +63,33 @@ local function clone(t)
   return o
 end
 
+--
+-- возвращает индекс значения val в массиве t
+--
+local function ifind(val,t)
+  for i,v in ipairs(t) do
+    if v == val then
+      return i
+    end
+  end
+end
+
 local function collect(t)
   return function(row)
     table.insert(t, clone(row))
   end
 end
 
+local function stringQuoteChar(cnn)
+  return cnn:identifierQuoteString() == "'" and '"' or "'"
+end
+
 local function bind_param(stmt, i, val, ...)
+  if val == odbc.NULL    then return stmt:bindnull(i)    end
+  if val == odbc.DEFAULT then return stmt:binddefault(i) end
   if type(val) == 'userdata' then
     return stmt:vbind_param(i, val, ...)
   end
-  if val == odbc.NULL    then return stmt:bindnull(i)    end
-  if val == odbc.DEFAULT then return stmt:binddefault(i) end
   return stmt:bind_impl(i, val, ...)
 end
 
@@ -107,17 +122,125 @@ local function Connection_new(env, ...)
   return cnn
 end
 
+local Statement_set_sql
 local function Statement_new(cnn, sql)
   assert(cnn)
   local stmt, err = cnn:statement_impl()
   if not stmt then return nil, err end
 
-  set_user_val(stmt,{
-    sql = sql;
-  })
+  set_user_val(stmt,{})
+
+  if sql then 
+    local ok, err = Statement_set_sql(stmt, sql)
+    if not ok then
+      stmt:destroy()
+      return nil, err
+    end
+  end
 
   return stmt
 end
+
+-------------------------------------------------------------------------------
+local param_utils = {} do
+--
+-- Используется для реализации именованных параметров
+--
+
+--
+-- паттерн для происка именованных параметров в запросе
+--
+param_utils.param_pattern = "[:]([^%d%s][%a%d_]+)"
+
+--
+-- заключает строку в ковычки
+--
+function param_utils.quoted (s,q) return (q .. string.gsub(s, q, q..q) .. q) end
+
+--
+--
+--
+function param_utils.bool2sql(v) return v and 1 or 0 end
+
+--
+-- 
+--
+function param_utils.num2sql(v)  return tostring(v) end
+
+--
+-- 
+--
+function param_utils.str2sql(v, q) return param_utils.quoted(v, q or "'") end
+
+--
+-- Подставляет именованные параметры
+--
+-- @param sql      - текст запроса
+-- @param params   - таблица значений параметров
+-- @return         - новый текст запроса
+--
+function param_utils.apply_params(cnn, sql, params)
+  params = params or {}
+  local q = cnn and stringQuoteChar(cnn) or "'"
+
+  local err
+  local str = string.gsub(sql,param_utils.param_pattern,function(param)
+    local v = params[param]
+    local tv = type(v)
+    if    ("number"      == tv)then return param_utils.num2sql (v)
+    elseif("string"      == tv)then return param_utils.str2sql (v, q)
+    elseif("boolean"     == tv)then return param_utils.bool2sql(v)
+    elseif(PARAM_NULL    ==  v)then return 'NULL'
+    elseif(PARAM_DEFAULT ==  v)then return 'DEFAULT'
+    end
+    err = ERR_MSGS.unknown_parameter .. param
+  end)
+  if err then return nil, err end
+  return str
+end
+
+--
+-- Преобразует именованные параметры в ?
+-- 
+-- @param sql      - текст запроса
+-- @param parnames - таблица разрешонных параметров
+--                 - true - разрешены все имена
+-- @return  новый текст запроса
+-- @return  массив имен параметров. Индекс - номер по порядку данного параметра
+--
+function param_utils.translate_params(sql,parnames)
+  if parnames == nil then parnames = true end
+  assert(type(parnames) == 'table' or (parnames == true))
+  local param_list={}
+  local err
+  local function replace()
+    local function t1(param) 
+      -- assert(type(parnames) == 'table')
+      if not ifind(param, parnames) then
+        err = ERR_MSGS.unsolved_parameter .. param
+        return
+      end
+      table.insert(param_list, param)
+      return '?'
+    end
+
+    local function t2(param)
+      -- assert(parnames == true)
+      table.insert(param_list, param)
+      return '?'
+    end
+
+    return (parnames == true) and t2 or t1
+  end
+
+  local str = string.gsub(sql,param_utils.param_pattern,replace())
+  if err then return nil, err end
+  if #param_list == 0 then return sql end
+  return str, param_list
+end
+
+end
+-------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
 do -- odbc
@@ -239,11 +362,36 @@ function Connection:execute(sql, params)
   local stmt, err = self:statement_impl()
   if not stmt then return nil, err end
   if params then
-    for i, v in ipairs(params) do
-      local ok, err = bind_param(stmt, i, v)
-      if not ok then
+    assert(type(params) == 'table')
+    if type((next(params))) == 'string' then -- named parameters
+      local parnames
+      sql, parnames = param_utils.translate_params(sql, true)
+      if not sql then
         stmt:destroy()
-        return nil, err, i
+        return nil, parnames
+      end
+      if parnames then -- parameters found in sql
+        for paramNo, paramName in ipairs(parnames) do
+          local value = params[paramName]
+          if value ~= nil then
+            local ok, err = bind_param(stmt, paramNo, value)
+            if not ok then
+              stmt:destroy()
+              return nil, err, i
+            end
+          else
+            stmt:destroy()
+            return nil, ERR_MSGS.unknown_parameter .. paramName
+          end
+        end
+      end
+    else
+      for i, v in ipairs(params) do
+        local ok, err = bind_param(stmt, i, v)
+        if not ok then
+          stmt:destroy()
+          return nil, err, i
+        end
       end
     end
   end
@@ -399,14 +547,22 @@ for _, tname in ipairs(buf_types) do
   end
 end
 
-local function Statement_set_sql(self, sql)
+Statement_set_sql = function (self, sql)
   assert(type(sql) == "string")
 
   if self:prepared()   then return nil, ERROR.query_prepared end
   if not self:closed() then return nil, ERROR.query_opened   end
 
   self:reset()
-  user_val(self).sql = sql
+  local private_ = user_val(self)
+  private_.sql   = sql
+
+  local sql, parnames = param_utils.translate_params(sql)
+  if sql and parnames then
+    private_.sql, private_.parnames = sql, parnames
+  else 
+    private_.parnames = nil
+  end
 
   return true
 end
@@ -423,12 +579,51 @@ end
 
 function Statement:bind(paramID, val, ...)
   local paramID_type = type(paramID)
-  assert((paramID_type == 'number')or(paramID_type == 'table'))
+  assert((paramID_type == 'string')or(paramID_type == 'number')or(paramID_type == 'table'))
 
   if self:opened() then return nil, ERROR.query_opened end
 
+  if paramID_type == "number" then
+    return bind_param(self, paramID, val)
+  end
+
+  local private_ = user_val(self)
+
+  if paramID_type == "string" then
+    local flag
+    if private_.parnames then
+      for paramNo, paramName in ipairs(private_.parnames) do
+        if paramName == paramID then
+          local ok, err = bind_param(self, paramNo, val, ...)
+          if not ok then return nil, err, paramNo end
+          flag = true
+        end
+      end
+    end
+    if not flag then return nil, ERROR.unknown_parameter .. paramID end
+    return true
+  end
+
   if paramID_type == "table" then
-    for i,v in pairs(paramID) do
+    if type(next(paramID)) == 'string' then
+      if not private_.parnames then
+        return nil, ERROR.unknown_parameter .. tostring(next(paramID))
+      end
+      for paramName, paramValue in pairs(paramID) do
+        local flag
+        for paramNo, paramName2 in ipairs(private_.parnames) do
+          if paramName == paramName2 then
+            local ok, err = bind_param(self, paramNo, paramValue, ...)
+            if not ok then return nil, err, paramNo end
+            flag = true
+          end
+        end
+        if not flag then return nil, ERROR.unknown_parameter .. paramName end
+      end
+      return true
+    end
+
+    for i, v in pairs(paramID) do
       local ok, err = bind_param(self, i, v)
       if not ok then
         return nil, err, i
@@ -443,15 +638,16 @@ end
 function Statement:execute(sql, params)
   if not self:closed() then return nil, ERROR.query_opened end
 
-  if not param and type(sql) == 'table' then
-    param, sql = sql, nil
+  if not params and type(sql) == 'table' then
+    params, sql = sql, nil
   end
 
   if sql ~= nil then
     local ok, err = Statement_set_sql(self, sql)
     if not ok then return nil, err end
   else
-    sql = user_val(self).sql
+    local private_ = user_val(self)
+    sql = private_.psql or private_.sql
   end
   if not sql then return nil, ERROR.no_sql_text end
 
@@ -471,6 +667,10 @@ function Statement:open(...)
   if not ok then return nil, err end
   if ok ~= self then return nil, ERROR.no_cursor end
   return ok
+end
+
+function Statement:opened()
+  return not self:closed()
 end
 
 function Statement:exec(...)
