@@ -14,7 +14,7 @@ local unpack = unpack or table.unpack
 
 local function conv_null(...)
   if odbc.NULL == nil then return ... end
-  if type((...)) == table then
+  if type((...)) == "table" then
     local t = (...)
     for k,v in pairs(t)do
       if v == odbc.NULL then t[k] = nil end
