@@ -249,6 +249,10 @@ odbc.NULL    = odbc.NULL or {}
 
 odbc.DEFAULT = odbc.DEFAULT or {}
 
+odbc.PARAM_NULL    = odbc.NULL
+
+odbc.PARAM_DEFAULT = odbc.DEFAULT
+
 ---
 --
 function odbc.connect(...)
@@ -645,10 +649,9 @@ function Statement:execute(sql, params)
   if sql ~= nil then
     local ok, err = Statement_set_sql(self, sql)
     if not ok then return nil, err end
-  else
-    local private_ = user_val(self)
-    sql = private_.psql or private_.sql
   end
+  sql = user_val(self).sql
+
   if not sql then return nil, ERROR.no_sql_text end
 
   if params ~= nil then
@@ -780,5 +783,21 @@ end
 
 end
 -------------------------------------------------------------------------------
+
+local CONNECTION_RENAME = {
+  set_autocommit = "setautocommit";
+  get_autocommit = "getautocommit";
+  query          = "statement";
+}
+
+for new, old in pairs(CONNECTION_RENAME) do
+  assert(nil == Connection[new])
+  assert(nil ~= Connection[old])
+  Connection[new] = Connection[old]
+end
+
+-- cnn = odbc.connect("emptydb")
+-- qry = cnn:query()
+-- CNN_ROWS = 3
 
 return odbc
