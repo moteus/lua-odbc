@@ -4,6 +4,31 @@
 
 local odbc = require "odbc.core"
 
+local throw
+if _G._VERSION >= 'Lua 5.2' then
+  throw = error
+else
+  throw = function(err, lvl)
+    return error(tostring(err), (lvl or 1)+1)
+  end
+end
+
+local ERROR = {
+  unsolved_parameter   = 'unsolved name of parameter: ';
+  unknown_parameter    = 'unknown parameter: ';
+  no_cursor            = 'query has not returned a cursor';
+  ret_cursor           = 'query has returned a cursor';
+  query_opened         = 'query is already opened';
+  cnn_not_opened       = 'connection is not opened';
+  query_not_opened     = 'query is not opened';
+  query_prepared       = 'query is already prepared';
+  deny_named_params    = 'named parameters are denied';
+  no_sql_text          = 'SQL text was not set';
+  pos_params_unsupport = 'positional parameters are not supported';
+  not_support          = 'not supported';
+  unknown_txn_lvl      = 'unknown transaction level: '; 
+};
+
 local Environment = odbc.getenvmeta()
 local Connection  = odbc.getcnnmeta()
 local Statement   = odbc.getstmtmeta()
@@ -59,7 +84,7 @@ local function rows(cur, fetch_mode)
     return function ()
       local res, err = cur:fetch(res, fetch_mode)
       if res then return res end
-      if err then error(tostring(err)) end
+      if err then throw(err) end
     end
   end
 
@@ -67,7 +92,7 @@ local function rows(cur, fetch_mode)
   return function ()
     local res, err = cur:fetch(res, 'n')
     if res then return unpack(res, 1, n) end
-    if err then error(tostring(err)) end
+    if err then throw(err) end
   end
 end
 
@@ -239,7 +264,7 @@ function Connection:exec(...)
   if not res then return nil, err end
   if type(res) == 'userdata' then 
     res:destroy()
-    return nil, 'query return resultset'
+    return nil, ERROR.ret_cursor
   end
   return res
 end
@@ -247,7 +272,7 @@ end
 function Connection:first_row(...)
   local stmt, err = self:execute(...)
   if not stmt then return nil, err end
-  if type(stmt) ~= 'userdata' then return nil, "no resultset" end
+  if type(stmt) ~= 'userdata' then return nil, ERROR.no_cursor end
   local args = pack_n(stmt:fetch())
   stmt:destroy()
   return unpack_n(args)
@@ -256,7 +281,7 @@ end
 local function Connection_first_Xrow(self, fetch_mode, ...)
   local stmt, err = self:execute(...)
   if not stmt then return nil, err end
-  if type(stmt) ~= 'userdata' then return nil, "no resultset" end
+  if type(stmt) ~= 'userdata' then return nil, ERROR.no_cursor end
   local row, err = stmt:fetch({}, fetch_mode)
   stmt:destroy()
   if not row then return nil, err end
@@ -283,7 +308,7 @@ local function Connection_Xeach(self, fetch_mode, sql, ...)
 
   local stmt, err = self:execute(sql, params)
   if not stmt then return nil, err end
-  if type(stmt) ~= 'userdata' then return nil, "no resultset" end
+  if type(stmt) ~= 'userdata' then return nil, ERROR.no_cursor end
   stmt:setdestroyonclose(true)
   return stmt:foreach(fetch_mode, true, callback)
 end
@@ -298,8 +323,8 @@ function Connection:teach(...) return Connection_Xeach(self, 'an', ...) end
 
 local function Connection_Xrows(self, fetch_mode, sql, params)
   local stmt, err = self:execute(sql, params)
-  if not stmt then error(tostring(err), 2) end
-  if type(stmt) ~= 'userdata' then error("no resultset", 2) end
+  if not stmt then throw(err, 2) end
+  if type(stmt) ~= 'userdata' then throw(ERROR.no_cursor, 2) end
   stmt:setdestroyonclose(true)
 
   return rows(stmt, fetch_mode)
@@ -377,8 +402,8 @@ end
 local function Statement_set_sql(self, sql)
   assert(type(sql) == "string")
 
-  if self:prepared()   then return nil, 'query prepared' end
-  if not self:closed() then return nil, 'query opened'   end
+  if self:prepared()   then return nil, ERROR.query_prepared end
+  if not self:closed() then return nil, ERROR.query_opened   end
 
   self:reset()
   user_val(self).sql = sql
@@ -400,7 +425,7 @@ function Statement:bind(paramID, val, ...)
   local paramID_type = type(paramID)
   assert((paramID_type == 'number')or(paramID_type == 'table'))
 
-  if self:opened() then return nil, "statement alrady open" end
+  if self:opened() then return nil, ERROR.query_opened end
 
   if paramID_type == "table" then
     for i,v in pairs(paramID) do
@@ -416,7 +441,7 @@ function Statement:bind(paramID, val, ...)
 end
 
 function Statement:execute(sql, params)
-  if not self:closed() then return nil, "query opened" end
+  if not self:closed() then return nil, ERROR.query_opened end
 
   if not param and type(sql) == 'table' then
     param, sql = sql, nil
@@ -428,7 +453,7 @@ function Statement:execute(sql, params)
   else
     sql = user_val(self).sql
   end
-  if not sql then return nil, "no sql text" end
+  if not sql then return nil, ERROR.no_sql_text end
 
   if params ~= nil then
     assert(type(params) == 'table')
@@ -444,12 +469,12 @@ end
 function Statement:open(...)
   local ok, err = self:execute(...)
   if not ok then return nil, err end
-  if ok ~= self then return nil, "no resultset" end
+  if ok ~= self then return nil, ERROR.no_cursor end
   return ok
 end
 
 function Statement:exec(...)
-  if not self:closed() then return nil, "query opened" end
+  if not self:closed() then return nil, ERROR.query_opened end
 
   local ok, err = self:execute(...)
   if not ok then return nil, err end
@@ -463,7 +488,7 @@ end
 function Statement:first_row(...)
   local stmt, err = self:execute(...)
   if not stmt then return nil, err end
-  if stmt ~= self then return nil, "no resultset" end
+  if stmt ~= self then return nil, ERROR.no_cursor end
   local args = pack_n(stmt:fetch())
   stmt:close()
   return unpack_n(args)
@@ -472,7 +497,7 @@ end
 local function Statement_first_Xrow(self, fetch_mode, ...)
   local stmt, err = self:execute(...)
   if not stmt then return nil, err end
-  if stmt ~= self then return nil, "no resultset" end
+  if stmt ~= self then return nil, ERROR.no_cursor end
   local row, err = stmt:fetch({}, fetch_mode)
   stmt:close()
   if not row then return nil, err end
@@ -495,7 +520,7 @@ end
 local function Statement_Xeach(self, fetch_mode, ...)
   if not self:closed() then 
     if (type(...) == 'string') or (type(...) == 'table') then
-      return nil, "query open"
+      return nil, ERROR.query_opened
     end
     return self:foreach(fetch_mode, ...)
   end
@@ -532,7 +557,7 @@ function Statement:teach(...) return Statement_Xeach(self, 'an', ...) end
 
 local function Statement_Xrows(self, fetch_mode, sql, params)
   local stmt, err = self:open(sql, params)
-  if not stmt then error(tostring(err), 2) end
+  if not stmt then throw(err, 2) end
 
   return rows(self, fetch_mode)
 end
