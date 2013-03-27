@@ -13,20 +13,89 @@ else
   end
 end
 
+local function clone(t)
+  local o = {}
+  for k, v in pairs(t) do o[k] = v end
+  return o
+end
+
+local ErrorMeta ErrorMeta = {
+  __index = function (self, key)
+    assert(#self > 0)
+    local row = rawget(self, 1)
+    return row and row[key]
+  end;
+
+  __concat = function (self, rhs)
+    assert(type(self) == 'table')
+    assert(#self > 0)
+
+    local t = {}
+    for _,v in ipairs(self)  do table.insert(t, clone(v)) end
+    if type(rhs) == 'table' then
+      for _,v in ipairs(rhs) do table.insert(t, clone(v)) end
+    else
+      assert(type(rhs) == 'string')
+      t[1].message = t[1].message .. rhs
+    end
+    return setmetatable(t, ErrorMeta)
+  end;
+
+  __tostring = function(self)
+    assert(#self > 0)
+    local res = ""
+    for i,t in ipairs(self) do
+      if t.message then
+        if #res == 0 then res = t.message
+        else res = res .. "\n" .. t.message end
+      end
+    end
+    return res
+  end;
+}
+
+local function E(msg,state,code)
+  assert(type(msg) == "string")
+  return setmetatable({{message=msg;state=state;code=code}}, ErrorMeta)
+end
+
+local function test_error()
+  local err = E"some error"
+  assert(#err == 1)
+  assert(err.message == "some error")
+  assert(err[1].message == "some error")
+  assert(tostring(err) == "some error")
+
+  local er2 = err.." value"
+  assert(#er2 == 1)
+  assert(er2.message == "some error value")
+  assert(er2[1].message == "some error value")
+  assert(tostring(er2) == "some error value")
+
+  local er2 = err..E"other error"
+  assert(#er2 == 2)
+  assert(er2.message == "some error")
+  assert(er2[1].message == "some error")
+  assert(er2[2].message == "other error")
+  assert(tostring(er2) == "some error\nother error")
+end
+
+test_error()
+
 local ERROR = {
-  unsolved_parameter   = 'unsolved name of parameter: ';
-  unknown_parameter    = 'unknown parameter: ';
-  no_cursor            = 'query has not returned a cursor';
-  ret_cursor           = 'query has returned a cursor';
-  query_opened         = 'query is already opened';
-  cnn_not_opened       = 'connection is not opened';
-  query_not_opened     = 'query is not opened';
-  query_prepared       = 'query is already prepared';
-  deny_named_params    = 'named parameters are denied';
-  no_sql_text          = 'SQL text was not set';
-  pos_params_unsupport = 'positional parameters are not supported';
-  not_support          = 'not supported';
-  unknown_txn_lvl      = 'unknown transaction level: '; 
+  unsolved_parameter   = E'unsolved name of parameter: ';
+  unknown_parameter    = E'unknown parameter: ';
+  no_cursor            = E'query has not returned a cursor';
+  ret_cursor           = E'query has returned a cursor';
+  query_opened         = E'query is already opened';
+  cnn_not_opened       = E'connection is not opened';
+  query_not_opened     = E'query is not opened';
+  query_prepared       = E'query is already prepared';
+  deny_named_params    = E'named parameters are denied';
+  no_sql_text          = E'SQL text was not set';
+  pos_params_unsupport = E'positional parameters are not supported';
+  not_support          = E'not supported';
+  unknown_txn_lvl      = E'unknown transaction level: '; 
 };
 
 local Environment = odbc.getenvmeta()
@@ -55,12 +124,6 @@ end
 
 local function unpack_n(t, s)
   return unpack(t, s or 1, t.n or #t)
-end
-
-local function clone(t)
-  local o = {}
-  for k, v in pairs(t) do o[k] = v end
-  return o
 end
 
 --
