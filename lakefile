@@ -38,8 +38,7 @@ target('build', lodbc)
 
 install = target('install', {
   file.group{odir=J(INSTALL_DIR, 'share', PROJECT); src = lodbc                   };
-  file.group{odir=J(INSTALL_DIR, 'share'         ); src = J('lua', '*.*')         };
-  file.group{odir=J(INSTALL_DIR, 'share', PROJECT); src = J('lua', 'lodbc', '*.*')};
+  file.group{odir=J(INSTALL_DIR, 'share'); recurse = true; src = J('lua', '*.*')  };
   file.group{odir=J(INSTALL_DIR, 'test'); recurse = true; src = J('test', '*.*')  };
 })
 
