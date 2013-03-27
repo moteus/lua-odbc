@@ -256,7 +256,7 @@ function param_utils.apply_params(cnn, sql, params)
     elseif(PARAM_NULL    ==  v)then return 'NULL'
     elseif(PARAM_DEFAULT ==  v)then return 'DEFAULT'
     end
-    err = ERR_MSGS.unknown_parameter .. param
+    err = ERROR.unknown_parameter .. param
   end)
   if err then return nil, err end
   return str
@@ -280,7 +280,7 @@ function param_utils.translate_params(sql,parnames)
     local function t1(param) 
       -- assert(type(parnames) == 'table')
       if not ifind(param, parnames) then
-        err = ERR_MSGS.unsolved_parameter .. param
+        err = ERROR.unsolved_parameter .. param
         return
       end
       table.insert(param_list, param)
@@ -315,6 +315,8 @@ odbc.DEFAULT = odbc.DEFAULT or {}
 odbc.PARAM_NULL    = odbc.NULL
 
 odbc.PARAM_DEFAULT = odbc.DEFAULT
+
+odbc.TRANSACTION = {} -- set below
 
 ---
 --
@@ -448,7 +450,7 @@ function Connection:execute(sql, params)
             end
           else
             stmt:destroy()
-            return nil, ERR_MSGS.unknown_parameter .. paramName
+            return nil, ERROR.unknown_parameter .. paramName
           end
         end
       end
@@ -784,13 +786,6 @@ end
 
 -- fetch_mode, [sql,] [params,] [autoclose,] fn
 local function Statement_Xeach(self, fetch_mode, ...)
-  if not self:closed() then 
-    if (type(...) == 'string') or (type(...) == 'table') then
-      return nil, ERROR.query_opened
-    end
-    return self:foreach(fetch_mode, ...)
-  end
-
   local n = 1
   local sql, params  = ...
   if type(sql) == 'string' then
@@ -805,6 +800,11 @@ local function Statement_Xeach(self, fetch_mode, ...)
     n = n + 1
   else 
     sql, params = nil
+  end
+
+  if not self:closed() then 
+    if sql or params then return nil, ERROR.query_opened end
+    return self:foreach(fetch_mode, select(n, ...))
   end
 
   local ok, err = self:open(sql, params)
@@ -836,10 +836,12 @@ function Statement:nrows(...) return Statement_Xrows(self, 'a',  ...) end
 
 function Statement:trows(...) return Statement_Xrows(self, 'an', ...) end
 
-function Statement:fetch_all(fetch_mode, sql, param)
+function Statement:fetch_all(fetch_mode, ...)
   assert(type(fetch_mode) == 'string')
   local result = {}
-  local ok, err = Statement_Xeach(self, fetch_mode, sql, param, collect(result))
+  local args = {...};
+  table.insert(args, collect(result))
+  local ok, err = Statement_Xeach(self, fetch_mode, unpack(args))
   if err == nil then return result end
   return nil, err
 end
@@ -848,9 +850,19 @@ end
 -------------------------------------------------------------------------------
 
 local CONNECTION_RENAME = {
-  set_autocommit = "setautocommit";
-  get_autocommit = "getautocommit";
-  query          = "statement";
+  set_autocommit       = "setautocommit";
+  get_autocommit       = "getautocommit";
+  query                = "statement";
+  username             = "userName";
+  set_catalog          = "setcatalog";
+  get_catalog          = "getcatalog";
+  set_readonly         = "setreadonly";
+  get_readonly         = "getreadonly";
+  set_trace            = "settrace";
+  get_trace            = "gettrace";
+  set_trace_file       = "settracefile";
+  get_trace_file       = "gettracefile";
+  supports_catalg_name = "isCatalogName";
 }
 
 for new, old in pairs(CONNECTION_RENAME) do
@@ -859,8 +871,147 @@ for new, old in pairs(CONNECTION_RENAME) do
   Connection[new] = Connection[old]
 end
 
--- cnn = odbc.connect("emptydb")
--- qry = cnn:query()
--- CNN_ROWS = 3
+------------------------------------------------------------------
+do
+
+local TRANSACTION_LEVEL = {
+  "NONE","READ_UNCOMMITTED","READ_COMMITTED",
+  "REPEATABLE_READ","SERIALIZABLE"
+}
+
+for i = 1, #TRANSACTION_LEVEL do
+  odbc.TRANSACTION [ TRANSACTION_LEVEL[i] ] = i
+  TRANSACTION_LEVEL[ TRANSACTION_LEVEL[i] ] = i
+end
+
+function Connection:supports_transaction(lvl)
+  if not self:connected() then return nil, ERROR.cnn_not_opened end
+  if lvl == nil then return self:supportsTransactions() end
+  if type(lvl) == 'string' then 
+    local lvl_n = TRANSACTION_LEVEL[lvl] 
+    if not lvl_n then return nil, ERROR.unknown_txn_lvl .. lvl end
+    lvl = lvl_n
+  end
+
+  assert(type(lvl) == 'number')
+  return self:supportsTransactionIsolationLevel(lvl)
+end
+
+function Connection:default_transaction()
+  if not self:connected() then return nil, ERROR.cnn_not_opened end
+  local lvl, err = self:getDefaultTransactionIsolation()
+  if not lvl then return nil, err end
+  return lvl, TRANSACTION_LEVEL[lvl]
+end
+
+function Connection:set_transaction_level(lvl)
+  if not self:connected() then return nil, ERROR.cnn_not_opened end
+
+  local err 
+  if lvl == nil then
+    lvl, err = self:default_transaction()
+    if not lvl then return nil, err end;
+  elseif type(lvl) == 'string' then 
+    local lvl_n = TRANSACTION_LEVEL[lvl] 
+    if not lvl_n then return nil, ERROR.unknown_txn_lvl .. lvl end
+    lvl = lvl_n
+  end
+
+  assert(type(lvl) == 'number')
+  return self:settransactionisolation(lvl)
+end
+
+function Connection:get_transaction_level()
+  if not self:connected() then return nil, ERROR.cnn_not_opened end
+
+  local lvl, err = self:gettransactionisolation()
+  if not lvl then return nil, err end
+  return lvl, TRANSACTION_LEVEL[lvl]
+end
+
+function Connection:supports_bind_param()
+  if not self:connected() then return nil, ERROR.cnn_not_opened end
+  return self:supportsBindParam()
+end
+
+function Connection:supports_prepare()
+  if not self:connected() then return nil, ERROR.cnn_not_opened end
+  return self:supportsPrepare()
+end
+
+function Connection:set_login_timeout(ms)
+  assert((ms == nil) or (type(ms) == 'number'))
+  self:setlogintimeout(ms or -1)
+  return true
+end
+
+function Connection:get_login_timeout()
+  local ms = self:getlogintimeout()
+  if ms == -1 then return nil end
+  return ms
+end
+
+end
+------------------------------------------------------------------
+
+------------------------------------------------------------------
+do -- Connection catalog
+
+local function callable(fn)
+  if not fn then return false end
+  local t = type(fn)
+  if t == 'function' then return true  end
+  if t == 'number'   then return false end
+  if t == 'boolean'  then return false end
+  if t == 'string'   then return false end
+  return true
+end
+
+local function implement(name, newname)
+  local impl_name  = name .. "_impl"
+  assert(     Connection[name]      )
+  assert( not Connection[impl_name] )
+  assert( not Connection[newname]   )
+  local impl = function (self, fetch_mode, ...)
+    local arg = pack_n(...)
+    local fn = arg[arg.n]
+    if callable(fn) then -- assume this callback
+      arg[arg.n] = nil
+      arg.n = arg.n - 1
+    else fn = nil end
+
+    local stmt, err = self[impl_name](self, unpack_n(arg))
+    if not stmt then return nil, err end
+    stmt:setdestroyonclose(true)
+
+    if fn then return stmt:foreach(fetch_mode, true, fn) end
+    return stmt:fetch_all(fetch_mode or 'a', true)
+  end
+
+  newname = newname or name
+  Connection[ name ..'_impl' ] = Connection[ name ]
+  Connection[         newname   ] = function(self, ...) return impl(self, nil,  ...) end
+  Connection[ 'i'  .. newname   ] = function(self, ...) return impl(self, 'n',  ...) end
+  Connection[ 'n'  .. newname   ] = function(self, ...) return impl(self, 'a',  ...) end
+  Connection[ 't'  .. newname   ] = function(self, ...) return impl(self, 'an', ...) end
+end
+
+implement('typeinfo')
+implement('tabletypes')
+implement('schemas')
+implement('catalogs')
+implement('statistics')
+implement('tables')
+implement('tableprivileges', 'table_privileges')
+implement('primarykeys', 'primary_keys')
+implement('indexinfo', 'index_info')
+implement('crossreference')
+implement('columns')
+implement('specialcolumns', 'special_columns')
+implement('procedures')
+implement('procedurecolumns', 'procedure_columns')
+implement('columnprivileges', 'column_privileges')
+end
+------------------------------------------------------------------
 
 return odbc
