@@ -320,7 +320,7 @@ odbc.TRANSACTION = {} -- set below
 
 ---
 --
-function odbc.connect(...)
+function odbc.Connect(...)
   local env, err = odbc.environment()
   if not env then return nil, err end
   local cnn, err = env:connect(...)
@@ -331,6 +331,24 @@ function odbc.connect(...)
   assert(cnn:environment() == env)
   return cnn, env
 end
+
+function odbc.Connection(...)
+  local env, err = odbc.environment()
+  if not env then return nil, err end
+  local cnn, err = env:connection(...)
+  if not cnn then 
+    env:destroy()
+    return nil, err
+  end
+  assert(cnn:environment() == env)
+  return cnn, env
+end
+
+function odbc.Environment(...)
+  return odbc.environment(...)
+end
+
+odbc.connect = odbc.Connect
 
 end
 -------------------------------------------------------------------------------
@@ -350,6 +368,10 @@ function Environment:connect(...)
   local ok, err = cnn:connect()
   if not ok then cnn:destroy() return nil, err end
   return cnn
+end
+
+function Environment:handle()
+  return self
 end
 
 end
@@ -846,6 +868,18 @@ function Statement:fetch_all(fetch_mode, ...)
   return nil, err
 end
 
+function Statement:supports_prepare()
+  return self:connection():supports_prepare()
+end
+
+function Statement:set_sql(...)
+  return Statement_set_sql(self, ...)
+end
+
+function Statement:handle()
+  return self
+end
+
 end
 -------------------------------------------------------------------------------
 
@@ -865,10 +899,22 @@ local CONNECTION_RENAME = {
   supports_catalg_name = "isCatalogName";
 }
 
+local STATEMENT_RENAME = {
+  set_autoclose       = "setautoclose";
+  get_autoclose       = "getautoclose";
+  unprepare           = "reset";
+}
+
 for new, old in pairs(CONNECTION_RENAME) do
   assert(nil == Connection[new])
   assert(nil ~= Connection[old])
   Connection[new] = Connection[old]
+end
+
+for new, old in pairs(STATEMENT_RENAME) do
+  assert(nil == Statement[new])
+  assert(nil ~= Statement[old])
+  Statement[new] = Statement[old]
 end
 
 ------------------------------------------------------------------

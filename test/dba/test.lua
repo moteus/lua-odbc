@@ -40,7 +40,7 @@ local to_n = tonumber
 
 local lunit = require "lunit"
 
-local TEST_NAME = 'Connection'
+local _ENV local TEST_NAME = 'Connection'
 if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
 else module( TEST_NAME, package.seeall, lunit.testcase ) end
 
@@ -53,6 +53,36 @@ end
 
 function teardown()
   if cnn then cnn:destroy() end
+end
+
+function test_interface()
+  assert_function(cnn.connect)
+  assert_function(cnn.disconnect)
+  assert_function(cnn.connected)
+  assert_function(cnn.destroy)
+  -- assert_function(cnn.destroyed)
+  assert_function(cnn.exec)
+  assert_function(cnn.each)
+  assert_function(cnn.ieach)
+  assert_function(cnn.neach)
+  assert_function(cnn.teach)
+  assert_function(cnn.first_row)
+  assert_function(cnn.first_irow)
+  assert_function(cnn.first_nrow)
+  assert_function(cnn.first_trow)
+  assert_function(cnn.first_value)
+  assert_function(cnn.fetch_all)
+  assert_function(cnn.rows)
+  assert_function(cnn.irows)
+  assert_function(cnn.nrows)
+  assert_function(cnn.trows)
+  assert_function(cnn.commit)
+  assert_function(cnn.rollback)
+  assert_function(cnn.set_autocommit)
+  assert_function(cnn.get_autocommit)
+  assert_function(cnn.query)
+  assert_function(cnn.prepare)
+  assert_function(cnn.handle)
 end
 
 function test_reconnect()
@@ -201,7 +231,7 @@ function test_exec()
   assert_number(cnn:exec("update Agent set ID=ID"))
 end
 
-local TEST_NAME = 'Query'
+local _ENV local TEST_NAME = 'Query'
 if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
 else module( TEST_NAME, package.seeall, lunit.testcase ) end
 
@@ -215,6 +245,40 @@ end
 function teardown()
   if qry then qry:destroy() end
   if cnn then cnn:destroy() end
+end
+
+function test_interface()
+  qry = cnn:query()
+  assert_function(qry.open)
+  assert_function(qry.close)
+  assert_function(qry.closed)
+  assert_function(qry.opened)
+  assert_function(qry.destroy)
+  assert_function(qry.destroyed)
+  assert_function(qry.exec)
+  assert_function(qry.each)
+  assert_function(qry.ieach)
+  assert_function(qry.neach)
+  assert_function(qry.teach)
+  assert_function(qry.first_row)
+  assert_function(qry.first_irow)
+  assert_function(qry.first_nrow)
+  assert_function(qry.first_trow)
+  assert_function(qry.first_value)
+  assert_function(qry.fetch_all)
+  assert_function(qry.rows)
+  assert_function(qry.irows)
+  assert_function(qry.nrows)
+  assert_function(qry.trows)
+  assert_function(qry.set_autoclose)
+  assert_function(qry.get_autoclose)
+  assert_function(qry.prepare)
+  assert_function(qry.prepared)
+  assert_function(qry.unprepare)
+  assert_function(qry.supports_prepare)
+  assert_function(qry.set_sql)
+  assert_function(qry.bind)
+  assert_function(qry.handle)
 end
 
 function test_create()
@@ -300,6 +364,33 @@ function test_create()
   assert_equal(CNN_ROWS, n)
   qry:destroy()
 
+end
+
+function test_each()
+  local sql = "select ID, Name from Agent order by ID"
+  local n
+  n = 0
+  qry = assert(cnn:query())
+  qry:each(sql, function(ID)
+    n = n + 1 assert_equal(n, to_n(ID))
+  end)
+  assert_equal(CNN_ROWS, n)
+  qry:destroy()
+
+  n = 0
+  qry = assert(cnn:query())
+  assert(qry:open(sql))
+  assert_nil(
+    qry:each(sql, function(ID)
+      n = n + 1 assert_equal(n, to_n(ID))
+    end)
+  )
+  assert_equal(0, n)
+  qry:each(function(ID)
+    n = n + 1 assert_equal(n, to_n(ID))
+  end)
+  assert_equal(CNN_ROWS, n)
+  qry:destroy()
 end
 
 function test_rows()
@@ -428,6 +519,15 @@ function test_prepare()
   assert_true(qry:bind(par))
   qry:each(do_test)
   assert_equal(CNN_ROWS, n)
+  qry:destroy()
+end
+
+function test_unprepare()
+  local sql = "select ID, Name from Agent order by ID"
+  qry = assert(cnn:prepare(sql))
+  assert_equal(qry:supports_prepare(), qry:prepared())
+  assert_true(qry:unprepare())
+  assert_false(qry:prepared())
   qry:destroy()
 end
 
