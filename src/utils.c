@@ -9,6 +9,8 @@ const char
   *LT_BINARY  = "binary",
   *LT_WSTRING = "string";
 
+static const int LODBC_NULL_VALUE = -1;
+const int *LODBC_NULL = &LODBC_NULL_VALUE;
 
 
 void lodbc_stackdump( lua_State* L ) {
@@ -148,7 +150,7 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
       SQLLEN got;
       SQLRETURN rc = SQLGetData(hstmt, i, LODBC_C_NUMBER, &num, 0, &got);
       if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
-      if (got == SQL_NULL_DATA) lua_pushnil(L);
+      if (got == SQL_NULL_DATA) lodbc_pushnull(L);
       else lua_pushnumber(L, num);
       break;
     }
@@ -157,7 +159,7 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
       SQLLEN got;
       SQLRETURN rc = SQLGetData(hstmt, i, SQL_C_BIT, &b, 0, &got);
       if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
-      if (got == SQL_NULL_DATA) lua_pushnil(L);
+      if (got == SQL_NULL_DATA) lodbc_pushnull(L);
       else lua_pushboolean(L, b);
       break;
     }
@@ -171,7 +173,7 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
       buffer = luaL_prepbuffer(&b);
       rc = SQLGetData(hstmt, i, stype, buffer, LUAL_BUFFERSIZE, &got);
       if (got == SQL_NULL_DATA){
-        lua_pushnil(L);
+        lodbc_pushnull(L);
         break;
       }
       while (rc == SQL_SUCCESS_WITH_INFO) {/* concat intermediary chunks */
@@ -372,4 +374,12 @@ int lodbc_iscallable(lua_State*L, int idx){
   lua_pop(L, 2);
   assert(top == lua_gettop(L));
   return ret;
+}
+
+void lodbc_pushnull(lua_State*L){
+  lua_pushlightuserdata(L, (void*)LODBC_NULL);
+}
+
+int lodbc_isnull(lua_State*L, int idx){
+  return (lua_touserdata(L, idx) == LODBC_NULL)?1:0;
 }

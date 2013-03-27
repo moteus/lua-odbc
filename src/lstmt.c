@@ -431,23 +431,34 @@ static int stmt_bind_ind(lua_State *L, SQLINTEGER ind){
   return lodbc_pass(L);
 }
 
-static int stmt_bind(lua_State *L){
-  const char* type;
-  CHECK_BIND_PARAM();
-  type = lodbc_sqltypetolua(par->sqltype);
+static int stmt_bind_null(lua_State *L){
+  return stmt_bind_ind(L,SQL_NULL_DATA);
+}
 
-  /* deal with data according to type */
-  switch (type[1]) {
-    /* nUmber */
-    case 'u': return stmt_bind_number_(L,stmt,i,par);
-    /* bOol */
-    case 'o': return stmt_bind_bool_(L,stmt,i,par);
-    /* sTring */ 
-    case 't': return stmt_bind_string_(L,stmt,i,par);
-    /* bInary */
-    case 'i': return stmt_bind_binary_(L,stmt,i,par);
+static int stmt_bind_default(lua_State *L){
+  return stmt_bind_ind(L,SQL_DEFAULT_PARAM);
+}
+
+static int stmt_bind(lua_State *L){
+  if( lodbc_isnull(L, 2) ) return stmt_bind_null(L);
+  else{
+    const char* type;
+    CHECK_BIND_PARAM();
+    type = lodbc_sqltypetolua(par->sqltype);
+
+    /* deal with data according to type */
+    switch (type[1]) {
+      /* nUmber */
+      case 'u': return stmt_bind_number_(L,stmt,i,par);
+      /* bOol */
+      case 'o': return stmt_bind_bool_(L,stmt,i,par);
+      /* sTring */ 
+      case 't': return stmt_bind_string_(L,stmt,i,par);
+      /* bInary */
+      case 'i': return stmt_bind_binary_(L,stmt,i,par);
+    }
+    return lodbc_faildirect(L,"unknown param type.");
   }
-  return lodbc_faildirect(L,"unknown param type.");
 }
 
 static int stmt_bind_number(lua_State *L){
@@ -468,14 +479,6 @@ static int stmt_bind_string(lua_State *L){
 static int stmt_bind_binary(lua_State *L){
   CHECK_BIND_PARAM();
   return stmt_bind_binary_(L,stmt,i,par);
-}
-
-static int stmt_bind_null(lua_State *L){
-  return stmt_bind_ind(L,SQL_NULL_DATA);
-}
-
-static int stmt_bind_default(lua_State *L){
-  return stmt_bind_ind(L,SQL_DEFAULT_PARAM);
 }
 
 #undef CHECK_BIND_PARAM

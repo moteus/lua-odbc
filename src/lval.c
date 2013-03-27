@@ -62,7 +62,7 @@ static int lodbc_##T##_create(lua_State *L){                        \
                                                                     \
 static int lodbc_##T##_get_value(lua_State *L){                     \
   lodbc_##T *val = lodbc_value(L, lodbc_##T);                       \
-  if(val->ind == SQL_NULL_DATA) lua_pushnil(L);                     \
+  if(val->ind == SQL_NULL_DATA) lodbc_pushnull(L);                  \
   else if(val->ind == SQL_DEFAULT) lua_pushnil(L);                  \
   else return lodbc_##T##_get(L,val);                               \
   return 1;                                                         \
@@ -422,7 +422,7 @@ static SQLLEN lodbc_char_ind(lodbc_char *val){
 static int lodbc_char_get_value(lua_State *L){
   lodbc_char *val = lodbc_value(L, lodbc_char);
   SQLULEN ind = lodbc_char_ind(val);
-  if   (ind == SQL_NULL_DATA) lua_pushnil(L);
+  if   (ind == SQL_NULL_DATA) lodbc_pushnull(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
   else lua_pushlstring(L, (char*)val->data, val->ind);
   return 1;
@@ -595,7 +595,7 @@ static SQLLEN lodbc_binary_ind(lodbc_binary *val){
 static int lodbc_binary_get_value(lua_State *L){
   lodbc_binary *val = lodbc_value(L, lodbc_binary);
   SQLULEN ind = lodbc_binary_ind(val);
-  if   (ind == SQL_NULL_DATA) lua_pushnil(L);
+  if   (ind == SQL_NULL_DATA) lodbc_pushnull(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
   else lua_pushlstring(L, (char*)val->data, val->ind);
   return 1;
@@ -771,7 +771,7 @@ static SQLLEN lodbc_wchar_ind(lodbc_wchar *val){
 static int lodbc_wchar_get_value(lua_State *L){
   lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
   SQLULEN ind = lodbc_wchar_ind(val);
-  if   (ind == SQL_NULL_DATA) lua_pushnil(L);
+  if   (ind == SQL_NULL_DATA) lodbc_pushnull(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
   else lua_pushlstring(L, (const char*)&val->data[0], val->ind);
   return 1;

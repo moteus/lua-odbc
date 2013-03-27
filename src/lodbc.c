@@ -6,6 +6,7 @@
 #include "lval.h"
 #include "l52util.h"
 #include "luaodbc.h"
+#include "utils.h"
 
 LODBC_EXPORT unsigned int lodbc_odbcver(){
   return LODBC_ODBCVER;
@@ -53,7 +54,10 @@ static const struct luaL_Reg lodbc_func[]   = {
 };
 
 static void lodbc_init_lib(lua_State *L, int nup){
-  lua_newtable(L); 
+  lua_newtable(L);
+  lua_pushliteral(L, "NULL");
+  lodbc_pushnull(L);
+  lua_rawset(L, -3);
 
   lua_newtable(L); // registry
   lua_pushvalue(L,-1); lodbc_err_initlib (L, 1);

@@ -9,9 +9,18 @@ local TEST_NAME = 'Connection test info'
 if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
 else module( TEST_NAME, package.seeall, lunit.testcase ) end
 
+local function assert_null_or_string(v, ...)
+  if v == odbc.NULL then return v, ... end
+  return assert_string(v, ...)
+end
+
 local function assert_opt_string(v, ...)
   if v == nil then return v, ... end
   return assert_string(v, ...)
+end
+
+local function assert_null(v, ...)
+  return assert_equal(odbc.NULL, v, ...)
 end
 
 local env, cnn, stmt
@@ -45,36 +54,36 @@ function test_catalog()
   stmt = assert(cnn:catalogs())
   stmt:foreach(function(catalog, schema, table, type)
     assert_string(catalog)
-    assert_nil(schema)
-    assert_nil(table)
-    assert_nil(type)
+    assert_null(schema)
+    assert_null(table)
+    assert_null(type)
   end)
   stmt:destroy()
 
   stmt = assert(cnn:schemas())
   stmt:foreach(function(catalog, schema, table, type)
-    assert_nil(catalog)
+    assert_null(catalog)
     assert_string(schema)
-    assert_nil(table)
-    assert_nil(type)
+    assert_null(table)
+    assert_null(type)
   end)
   stmt:destroy()
 
   stmt = assert(cnn:tabletypes())
   stmt:foreach(function(catalog, schema, table, type)
-    assert_nil(catalog)
-    assert_nil(schema)
-    assert_nil(table)
+    assert_null(catalog)
+    assert_null(schema)
+    assert_null(table)
     assert_string(type)
   end)
   stmt:destroy()
 
   stmt = assert(cnn:tables())
   stmt:foreach(function(catalog, schema, table, type)
-    assert_opt_string(catalog)
-    assert_opt_string(schema)
+    assert_null_or_string(catalog)
+    assert_null_or_string(schema)
     assert_string(table)
-    assert_opt_string(type)
+    assert_null_or_string(type)
   end)
   stmt:destroy()
 end

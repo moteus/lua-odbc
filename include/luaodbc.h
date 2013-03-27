@@ -20,6 +20,7 @@ typedef int (*lodbc_free_fn) (lua_State *, SQLHANDLE, void *);
 LODBC_EXPORT extern const char *LODBC_ENV;
 LODBC_EXPORT extern const char *LODBC_CNN;
 LODBC_EXPORT extern const char *LODBC_STMT;
+LODBC_EXPORT extern const int  *LODBC_NULL;
 
 LODBC_EXPORT unsigned int lodbc_odbcver();
 
