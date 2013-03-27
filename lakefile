@@ -57,6 +57,7 @@ end
 target('test', install, function()
   local test_dir = J(INSTALL_DIR,'test')
   run(J(test_dir,'luasql','test-luasql.lua'), test_dir)
+  run(J(test_dir,'dba','test.lua'), test_dir)
   run(J(test_dir,'test.lua'), test_dir)
 end)
 
