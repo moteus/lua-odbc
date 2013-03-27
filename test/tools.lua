@@ -107,3 +107,15 @@ function ensure_proc(cnn)
   if proc_exists(cnn) then drop_proc(cnn) end
   return create_proc(cnn)
 end
+
+local lunit    = require "lunit"
+local IS_LUA52 = _VERSION >= 'Lua 5.2'
+
+TEST_CASE = function (name)
+  if not IS_LUA52 then
+    module(name, package.seeall, lunit.testcase)
+    setfenv(2, _M)
+  else
+    return lunit.module(name, 'seeall')
+  end
+end

@@ -5,9 +5,7 @@ local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
 local arg = {...}
 
-local TEST_NAME = 'Statement test'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+local _ENV = TEST_CASE'Statement test'
 
 local env, cnn, stmt
 

@@ -40,9 +40,19 @@ local to_n = tonumber
 
 local lunit = require "lunit"
 
-local _ENV local TEST_NAME = 'Connection'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+local lunit    = require "lunit"
+local IS_LUA52 = _VERSION >= 'Lua 5.2'
+
+TEST_CASE = function (name)
+  if not IS_LUA52 then
+    module(name, package.seeall, lunit.testcase)
+    setfenv(2, _M)
+  else
+    return lunit.module(name, 'seeall')
+  end
+end
+
+local _ENV = TEST_CASE'Connection'
 
 local cnn
 
@@ -231,9 +241,7 @@ function test_exec()
   assert_number(cnn:exec("update Agent set ID=ID"))
 end
 
-local _ENV local TEST_NAME = 'Query'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+local _ENV = TEST_CASE'Query'
 
 local cnn, qry
 

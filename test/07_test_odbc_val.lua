@@ -5,9 +5,7 @@ local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
 local arg = {...}
 
-local TEST_NAME = 'Value test'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+local _ENV = TEST_CASE'Value test'
 
 function setup()
 end
@@ -74,9 +72,7 @@ function test_buf()
   end
 end
 
-local TEST_NAME = 'Select into value test'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+local _ENV = TEST_CASE'Select into value test'
 
 local TEST_ROWS = 1
 local env, cnn, stmt
