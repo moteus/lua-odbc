@@ -110,6 +110,10 @@ static int stmt_destroy (lua_State *L) {
 
     stmt->flags |= LODBC_FLAG_DESTROYED;
   }
+
+  lua_pushnil(L);
+  // lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)stmt);
+  lodbc_set_user_value(L, 1);
   return lodbc_pass(L);
 }
 
@@ -144,6 +148,33 @@ static int stmt_closed (lua_State *L) {
 static int stmt_connection(lua_State *L){
   lodbc_stmt *stmt = lodbc_getstmt(L);
   lua_rawgeti(L, LODBC_LUA_REGISTRY, stmt->cnn_ref);
+  return 1;
+}
+
+#if 0 
+
+static int stmt_getuservalue(lua_State *L){
+  lua_rawgetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getstmt(L));
+  return 1;
+}
+
+static int stmt_setuservalue(lua_State *L){
+  lua_settop(L, 2);
+  lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getstmt(L));
+  return 1;
+}
+
+#endif
+
+static int stmt_getuservalue(lua_State *L){
+  lodbc_getstmt(L);
+  lodbc_get_user_value(L, 1);
+  return 1;
+}
+
+static int stmt_setuservalue(lua_State *L){
+  lodbc_getstmt(L);lua_settop(L, 2);
+  lodbc_set_user_value(L, 1);
   return 1;
 }
 
@@ -979,7 +1010,6 @@ static int stmt_cancel(lua_State *L){
   return lodbc_pass(L);
 }
 
-
 static int stmt_rowcount(lua_State *L){
   lodbc_stmt *stmt = lodbc_getstmt(L);
   SQLLEN numrows = 0;
@@ -1257,6 +1287,9 @@ static const struct luaL_Reg lodbc_stmt_methods[] = {
   {"reset",     stmt_reset},
   {"resetcolinfo", stmt_reset_colinfo},
   {"connection", stmt_connection},
+
+  {"getuservalue",  stmt_getuservalue},
+  {"setuservalue",  stmt_setuservalue},
 
   {"rowcount",  stmt_rowcount},
   {"vfetch",    stmt_vfetch},

@@ -72,6 +72,7 @@ static void lodbc_init_lib(lua_State *L, int nup){
 
 LODBC_EXPORT int luaopen_lodbc (lua_State *L){
   lodbc_init_lib(L, 0);
+  lodbc_init_user_value(L);
   return 1;
 }
 

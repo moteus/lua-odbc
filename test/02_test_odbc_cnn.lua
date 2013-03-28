@@ -59,4 +59,20 @@ function test_connect()
   assert_true(not cnn:connected())
 end
 
+function test_uservalue()
+  assert_nil(cnn:getuservalue())
+  assert_equal(cnn, cnn:setuservalue(123))
+  assert_equal(123, cnn:getuservalue())
+  assert_equal(cnn, cnn:setuservalue())
+  assert_nil(cnn:getuservalue())
+  local ptr = weak_ptr{}
+  assert_equal(cnn, cnn:setuservalue(ptr.value))
+  assert_equal(ptr.value, cnn:getuservalue())
+  gc_collect()
+  assert_table(ptr.value)
+  cnn:destroy()
+  gc_collect()
+  assert_nil(ptr.value)
+end
+
 local_run_test(arg)

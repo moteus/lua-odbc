@@ -40,15 +40,6 @@ function test_destroy()
   assert_true(stmt:destroyed())
 end
 
-local function weak_ptr(val)
-  return setmetatable({value = val},{__mode = 'v'})
-end
-
-local function gc_collect()
-  collectgarbage("collect")
-  collectgarbage("collect")
-end
-
 function test_weak()
   local function test()
     local ptr
@@ -65,6 +56,24 @@ function test_weak()
   test()
   assert_true(cnn:setautoclosestmt(true))
   test()
+end
+
+function test_uservalue()
+  stmt = assert_userdata( cnn:statement() )
+  assert_nil(stmt:getuservalue())
+  assert_equal(stmt, stmt:setuservalue(123))
+  assert_equal(123, stmt:getuservalue())
+  assert_equal(stmt, stmt:setuservalue())
+  assert_nil(stmt:getuservalue())
+  local ptr = weak_ptr{}
+  assert_equal(stmt, stmt:setuservalue(ptr.value))
+  assert_equal(ptr.value, stmt:getuservalue())
+  gc_collect()
+  assert_table(ptr.value)
+  assert_equal(ptr.value, stmt:getuservalue())
+  stmt:destroy()
+  gc_collect()
+  assert_nil(ptr.value)
 end
 
 local_run_test(arg)

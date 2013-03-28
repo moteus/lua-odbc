@@ -61,4 +61,10 @@ void lodbc_pushnull(lua_State*L);
 
 int lodbc_isnull(lua_State*L, int idx);
 
+void lodbc_init_user_value(lua_State*L);
+
+void lodbc_get_user_value(lua_State*L, int keyindex);
+
+void lodbc_set_user_value(lua_State*L, int keyindex);
+
 #endif

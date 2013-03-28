@@ -119,3 +119,13 @@ function TEST_CASE (name)
     return lunit.module(name, 'seeall')
   end
 end
+
+function weak_ptr(val)
+  return setmetatable({value = val},{__mode = 'v'})
+end
+
+function gc_collect()
+  collectgarbage("collect")
+  collectgarbage("collect")
+end
+

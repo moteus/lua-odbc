@@ -59,4 +59,20 @@ function test_destroy()
   assert_true(env:destroy())
 end
 
+function test_uservalue()
+  assert_nil(env:getuservalue())
+  assert_equal(env, env:setuservalue(123))
+  assert_equal(123, env:getuservalue())
+  assert_equal(env, env:setuservalue())
+  assert_nil(env:getuservalue())
+  local ptr = weak_ptr{}
+  assert_equal(env, env:setuservalue(ptr.value))
+  assert_equal(ptr.value, env:getuservalue())
+  gc_collect()
+  assert_table(ptr.value)
+  env:destroy()
+  gc_collect()
+  assert_nil(ptr.value)
+end
+
 local_run_test(arg)
