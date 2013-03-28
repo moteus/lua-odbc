@@ -106,14 +106,12 @@ local function make_cahe()
   return setmetatable({}, {__mode="k"})
 end
 
-local user_values = make_cahe()
-
 local function user_val(ud)
-  return user_values[ud]
+  return ud:getuservalue()
 end
 
 local function set_user_val(ud, val)
-  user_values[ud] = val
+  ud:setuservalue(val)
 end
 
 local unpack = unpack or table.unpack
