@@ -107,3 +107,13 @@ function ensure_proc(cnn)
   if proc_exists(cnn) then drop_proc(cnn) end
   return create_proc(cnn)
 end
+
+function weak_ptr(val)
+  return setmetatable({value = val},{__mode = 'v'})
+end
+
+function gc_collect()
+  collectgarbage("collect")
+  collectgarbage("collect")
+end
+

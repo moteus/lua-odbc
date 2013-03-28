@@ -164,6 +164,10 @@ static int cnn_destroy (lua_State *L) {
 
     cnn->flags |= LODBC_FLAG_DESTROYED;
   }
+
+  lua_pushnil(L);
+  // lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)cnn);
+  lodbc_set_user_value(L, 1);
   return lodbc_pass(L);
 }
 
@@ -188,6 +192,33 @@ static int cnn_statement (lua_State *L) {
   SQLRETURN ret = SQLAllocHandle (hSTMT, cnn->handle, &hstmt);
   if(lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
   return lodbc_statement_create(L,hstmt,cnn,1,1,0,0);
+}
+
+#if 0
+
+static int cnn_getuservalue(lua_State *L){
+  lua_rawgetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getcnn(L));
+  return 1;
+}
+
+static int cnn_setuservalue(lua_State *L){
+  lua_settop(L, 2);
+  lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getcnn(L));
+  return 1;
+}
+
+#endif
+
+static int cnn_getuservalue(lua_State *L){
+  lodbc_getcnn(L);
+  lodbc_get_user_value(L, 1);
+  return 1;
+}
+
+static int cnn_setuservalue(lua_State *L){
+  lodbc_getcnn(L);lua_settop(L, 2);
+  lodbc_set_user_value(L, 1);
+  return 1;
 }
 
 //{ connect
@@ -2208,6 +2239,9 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"rollback",      cnn_rollback},
 
   {"statement",     cnn_statement},
+
+  {"getuservalue",  cnn_getuservalue},
+  {"setuservalue",  cnn_setuservalue},
 
   {"supportsPrepare",        cnn_has_prepare},
   {"supportsBindParam",      cnn_has_bindparam},

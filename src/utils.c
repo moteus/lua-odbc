@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "lualib.h"
 #include "lerr.h"
+#include "l52util.h"
 
 const char 
   *LT_STRING  = "string",
@@ -9,7 +10,7 @@ const char
   *LT_BINARY  = "binary",
   *LT_WSTRING = "string";
 
-
+static const char *LODBC_USER_VALUE = "User value storage";
 
 void lodbc_stackdump( lua_State* L ) {
   int top= lua_gettop(L);
@@ -372,4 +373,37 @@ int lodbc_iscallable(lua_State*L, int idx){
   lua_pop(L, 2);
   assert(top == lua_gettop(L));
   return ret;
+}
+
+void lodbc_init_user_value(lua_State*L){
+  int top = lua_gettop(L);
+  lua_newtable(L);
+  lua_newtable(L);
+  lua_pushliteral(L, "k");
+  lua_setfield(L, -2, "__mode");
+  lua_setmetatable(L, -2);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, LODBC_USER_VALUE);
+  assert(top == lua_gettop(L));
+}
+
+void lodbc_get_user_value(lua_State*L, int keyindex){
+  int top = lua_gettop(L);
+  lua_rawgetp(L, LUA_REGISTRYINDEX, LODBC_USER_VALUE);
+  lua_pushvalue(L, keyindex);
+  lua_rawget(L, -2);
+  lua_remove(L, -2);
+  assert((top+1) == lua_gettop(L));
+}
+
+void lodbc_set_user_value(lua_State*L, int keyindex){
+  int top = lua_gettop(L);
+  assert(top >= 2);                                     // ... key, ..., value
+  lua_rawgetp(L, LUA_REGISTRYINDEX, LODBC_USER_VALUE);  // ... key, ..., value, tbl
+  assert((top+1) == lua_gettop(L));                     //                -3      -2     -1
+  lua_pushvalue(L, keyindex);                           // ... key, ..., value , tbl   , key
+  lua_insert(L, -3);                                    // ... key, ..., key   , value , tbl
+  lua_insert(L, -3);                                    // ... key, ..., tbl   , key   , value
+  lua_rawset(L, -3);                                    // ... key, ..., tbl
+  lua_pop(L, 1);                                        // ... key, ...
+  assert((top-1) == lua_gettop(L));
 }
