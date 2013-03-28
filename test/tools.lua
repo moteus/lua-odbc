@@ -1,6 +1,8 @@
 odbc = require "odbc"
 require "config"
 
+IS_LUA52 = _VERSION >= 'Lua 5.2'
+
 function run_test(arg)
   local _, emsg = xpcall(function()
     lunit.main(arg)
@@ -108,10 +110,8 @@ function ensure_proc(cnn)
   return create_proc(cnn)
 end
 
-local lunit    = require "lunit"
-local IS_LUA52 = _VERSION >= 'Lua 5.2'
-
-TEST_CASE = function (name)
+function TEST_CASE (name)
+  local lunit = require"lunit"
   if not IS_LUA52 then
     module(name, package.seeall, lunit.testcase)
     setfenv(2, _M)
