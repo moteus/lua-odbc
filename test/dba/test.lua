@@ -93,6 +93,9 @@ function test_interface()
   assert_function(cnn.query)
   assert_function(cnn.prepare)
   assert_function(cnn.handle)
+  assert_function(cnn.set_config)
+  assert_function(cnn.get_config)
+  assert_function(cnn.environment)
 end
 
 function test_reconnect()
@@ -241,6 +244,26 @@ function test_exec()
   assert_number(cnn:exec("update Agent set ID=ID"))
 end
 
+function test_config()
+  local env = assert(cnn:environment())
+  local p1 = assert_boolean(env:get_config("FORCE_REPLACE_PARAMS"))
+  local p2 = assert_boolean(env:get_config("IGNORE_NAMED_PARAMS") )
+
+  assert_equal(p1, cnn:get_config("FORCE_REPLACE_PARAMS"))
+  assert_equal(p2, cnn:get_config("IGNORE_NAMED_PARAMS"))
+
+  env:set_config("FORCE_REPLACE_PARAMS", not p1)
+  cnn:set_config("IGNORE_NAMED_PARAMS",  not p2)
+
+  assert_equal( not p1, env:get_config("FORCE_REPLACE_PARAMS") )
+  assert_equal(     p2, env:get_config("IGNORE_NAMED_PARAMS")  )
+  assert_equal( not p1, cnn:get_config("FORCE_REPLACE_PARAMS") )
+  assert_equal( not p2, cnn:get_config("IGNORE_NAMED_PARAMS")  )
+  
+  cnn:set_config("IGNORE_NAMED_PARAMS", nil)
+  assert_equal( p2, cnn:get_config("IGNORE_NAMED_PARAMS")  )
+end
+
 local _ENV = TEST_CASE'Query'
 
 local cnn, qry
@@ -287,6 +310,9 @@ function test_interface()
   assert_function(qry.set_sql)
   assert_function(qry.bind)
   assert_function(qry.handle)
+  assert_function(qry.set_config)
+  assert_function(qry.get_config)
+  assert_function(qry.connection)
 end
 
 function test_create()
@@ -628,6 +654,28 @@ function test_first()
   assert_equal(Agent, row[2])
   assert_equal(Agent, row.Name)
 
+end
+
+function test_config()
+  qry = cnn:query()
+  assert_equal(cnn, qry:connection())
+
+  local p1 = assert_boolean(cnn:get_config("FORCE_REPLACE_PARAMS"))
+  local p2 = assert_boolean(cnn:get_config("IGNORE_NAMED_PARAMS") )
+
+  assert_equal(p1, qry:get_config("FORCE_REPLACE_PARAMS"))
+  assert_equal(p2, qry:get_config("IGNORE_NAMED_PARAMS"))
+
+  cnn:set_config("FORCE_REPLACE_PARAMS", not p1)
+  qry:set_config("IGNORE_NAMED_PARAMS",  not p2)
+
+  assert_equal( not p1, cnn:get_config("FORCE_REPLACE_PARAMS") )
+  assert_equal(     p2, cnn:get_config("IGNORE_NAMED_PARAMS")  )
+  assert_equal( not p1, qry:get_config("FORCE_REPLACE_PARAMS") )
+  assert_equal( not p2, qry:get_config("IGNORE_NAMED_PARAMS")  )
+  
+  qry:set_config("IGNORE_NAMED_PARAMS", nil)
+  assert_equal( p2, qry:get_config("IGNORE_NAMED_PARAMS")  )
 end
 
 for _, str in ipairs{

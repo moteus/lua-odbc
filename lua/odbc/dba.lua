@@ -172,6 +172,16 @@ local function rows(cur, fetch_mode)
   end
 end
 
+local environment = odbc.environment
+local function Environment_new(...)
+  local env, err = environment(...)
+  if not env then return nil, err end
+
+  set_user_val(env, {})
+
+  return env
+end
+
 local function Connection_new(env, ...)
   local cnn, err = env:connection_impl()
   if not cnn then return nil, err end
@@ -183,16 +193,14 @@ local function Connection_new(env, ...)
   return cnn
 end
 
-local Statement_set_sql
 local function Statement_new(cnn, sql)
-  assert(cnn)
   local stmt, err = cnn:statement_impl()
   if not stmt then return nil, err end
 
   set_user_val(stmt,{})
 
   if sql then 
-    local ok, err = Statement_set_sql(stmt, sql)
+    local ok, err = stmt:set_sql(sql)
     if not ok then
       stmt:destroy()
       return nil, err
@@ -303,6 +311,16 @@ end
 end
 -------------------------------------------------------------------------------
 
+local DBA_OPTIONS = {
+  -- всегда заменять параметры подстановкой строки
+  FORCE_REPLACE_PARAMS = false;
+
+  -- не пытатся преобразовывать именованные параметры
+  -- это необходимо для предотвращения изменения текста SQL перед выполнением
+  -- при этом параметры будут поддерживатся только если проддерживается bind(будут использоваться только '?')
+  IGNORE_NAMED_PARAMS = false;
+};
+
 -------------------------------------------------------------------------------
 do -- odbc
 
@@ -319,31 +337,29 @@ odbc.TRANSACTION = {} -- set below
 ---
 --
 function odbc.Connect(...)
-  local env, err = odbc.environment()
+  local env, err = odbc.Environment()
   if not env then return nil, err end
   local cnn, err = env:connect(...)
   if not cnn then 
     env:destroy()
     return nil, err
   end
-  assert(cnn:environment() == env)
   return cnn, env
 end
 
 function odbc.Connection(...)
-  local env, err = odbc.environment()
+  local env, err = odbc.Environment()
   if not env then return nil, err end
   local cnn, err = env:connection(...)
   if not cnn then 
     env:destroy()
     return nil, err
   end
-  assert(cnn:environment() == env)
   return cnn, env
 end
 
 function odbc.Environment(...)
-  return odbc.environment(...)
+  return Environment_new(...)
 end
 
 odbc.connect = odbc.Connect
@@ -370,6 +386,21 @@ end
 
 function Environment:handle()
   return self
+end
+
+function Environment:get_config(name)
+  local private_ = user_val(self)
+  if private_.lib_opt then
+    local val = private_.lib_opt[name]
+    if val ~= nil then return val end
+  end
+  return DBA_OPTIONS[name]
+end
+
+function Environment:set_config(name, value)
+  local private_ = user_val(self)
+  if not private_.lib_opt then private_.lib_opt = {} end
+  private_.lib_opt[name] = value
 end
 
 end
@@ -583,6 +614,21 @@ function Connection:fetch_all(fetch_mode, sql, param)
   return nil, err
 end
 
+function Connection:set_config(name, value)
+  local private_ = user_val(self)
+  if not private_.lib_opt then private_.lib_opt = {} end
+  private_.lib_opt[name] = value
+end
+
+function Connection:get_config(name )
+  local private_ = user_val(self)
+  if private_.lib_opt then
+    local val = private_.lib_opt[name]
+    if val ~= nil then return val end
+  end
+  return self:environment():get_config(name)
+end
+
 end
 -------------------------------------------------------------------------------
 
@@ -636,29 +682,9 @@ for _, tname in ipairs(buf_types) do
   end
 end
 
-Statement_set_sql = function (self, sql)
-  assert(type(sql) == "string")
-
-  if self:prepared()   then return nil, ERROR.query_prepared end
-  if not self:closed() then return nil, ERROR.query_opened   end
-
-  self:reset()
-  local private_ = user_val(self)
-  private_.sql   = sql
-
-  local sql, parnames = param_utils.translate_params(sql)
-  if sql and parnames then
-    private_.sql, private_.parnames = sql, parnames
-  else 
-    private_.parnames = nil
-  end
-
-  return true
-end
-
 function Statement:prepare(sql)
   if sql then
-    local ok, err = Statement_set_sql(self, sql)
+    local ok, err = self:set_sql(sql)
     if not ok then return nil, err end
   else
     sql = user_val(self).sql
@@ -732,7 +758,7 @@ function Statement:execute(sql, params)
   end
 
   if sql ~= nil then
-    local ok, err = Statement_set_sql(self, sql)
+    local ok, err = self:set_sql(sql)
     if not ok then return nil, err end
   end
   sql = user_val(self).sql
@@ -870,12 +896,43 @@ function Statement:supports_prepare()
   return self:connection():supports_prepare()
 end
 
-function Statement:set_sql(...)
-  return Statement_set_sql(self, ...)
+function Statement:set_sql(sql)
+  assert(type(sql) == "string")
+
+  if self:prepared()   then return nil, ERROR.query_prepared end
+  if not self:closed() then return nil, ERROR.query_opened   end
+
+  self:reset()
+  local private_ = user_val(self)
+  private_.sql   = sql
+
+  local sql, parnames = param_utils.translate_params(sql)
+  if sql and parnames then
+    private_.sql, private_.parnames = sql, parnames
+  else 
+    private_.parnames = nil
+  end
+
+  return true
 end
 
 function Statement:handle()
   return self
+end
+
+function Statement:set_config(name, value)
+  local private_ = user_val(self)
+  if not private_.lib_opt then private_.lib_opt = {} end
+  private_.lib_opt[name] = value
+end
+
+function Statement:get_config(name )
+  local private_ = user_val(self)
+  if private_.lib_opt then
+    local val = private_.lib_opt[name]
+    if val ~= nil then return val end
+  end
+  return self:connection():get_config(name)
 end
 
 end
