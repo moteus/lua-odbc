@@ -1,23 +1,22 @@
-local CreateConnect = {
+local LoadLib = {
   ["odbc.dba"] = function()
-    local dba = require "odbc.dba"
-    local cnn, err = dba.connect{
-      Driver   = "SQLite3 ODBC Driver";
-      Database = ":memory:";
+    return require "odbc.dba",{
+      {
+        Driver   = "SQLite3 ODBC Driver";
+        Database = ":memory:";
+      }
     }
-    return cnn, err
   end;
 
-  ["lsql"] = function()
-    local dba = require "dba.luasql".load('sqlite3')
-    return dba.Connect(":memory:")
+  ["luasql"] = function()
+    return require "dba.luasql".load('sqlite3'), {":memory:"}
   end;
 
   ["odbc.luasql"] = function()
     local dba = require "dba"
     local luasql = require "odbc.luasql"
     dba = dba.load(luasql.odbc)
-    return dba.Connect("SQLite3memory")
+    return dba, {"SQLite3memory"}
   end
 }
 
@@ -36,6 +35,7 @@ local function pack_n(...)
 end
 
 local to_n = tonumber
+local unpack = unpack or table.unpack
 
 local lunit = require "lunit"
 
@@ -51,12 +51,43 @@ TEST_CASE = function (name)
   end
 end
 
-local _ENV = TEST_CASE'Connection'
+local _ENV = TEST_CASE'Environment'
 
-local cnn
+local env, dba
 
 function setup()
-  cnn = assert(CreateConnect[CNN_TYPE]())
+  local CNN_PARAMS dba, CNN_PARAMS = LoadLib[CNN_TYPE]()
+  cnn = assert(dba.Connect(unpack(CNN_PARAMS)))
+  init_db(cnn)
+end
+
+function teardown()
+  if env then env:destroy() end
+end
+
+function test_interface()
+  assert_not_nil(dba.PARAM_NULL)
+  assert_not_nil(dba.PARAM_DEFAULT)
+  assert_function(dba.Environment)
+  assert_function(dba.Connection)
+  assert_function(dba.Connect)
+  env = dba.Environment()
+  assert_function(env.connection)
+  assert_function(env.connect)
+  assert_function(env.destroy)
+  assert_function(env.destroyed)
+  assert_function(env.handle)
+  assert_function(env.set_config)
+  assert_function(env.get_config)
+end
+
+local _ENV = TEST_CASE'Connection'
+
+local cnn, dba
+
+function setup()
+  local CNN_PARAMS dba, CNN_PARAMS = LoadLib[CNN_TYPE]()
+  cnn = assert(dba.Connect(unpack(CNN_PARAMS)))
   init_db(cnn)
 end
 
@@ -69,7 +100,7 @@ function test_interface()
   assert_function(cnn.disconnect)
   assert_function(cnn.connected)
   assert_function(cnn.destroy)
-  -- assert_function(cnn.destroyed)
+  assert_function(cnn.destroyed)
   assert_function(cnn.exec)
   assert_function(cnn.each)
   assert_function(cnn.ieach)
@@ -263,12 +294,23 @@ function test_config()
   assert_equal( p2, cnn:get_config("IGNORE_NAMED_PARAMS")  )
 end
 
+function test_apply_params()
+  cnn:set_config("FORCE_REPLACE_PARAMS", true)
+  assert_equal(1, cnn:exec([[
+    update Agent set NAME = NAME where id=:id;
+  ]],{id=1}))
+  assert_equal(1, cnn:exec([[
+    update Agent set NAME = NAME where NAME=:NAME;
+  ]],{NAME="Agent#1"}))
+end
+
 local _ENV = TEST_CASE'Query'
 
-local cnn, qry
+local dba, cnn, qry
 
 function setup()
-  cnn = assert(CreateConnect[CNN_TYPE]())
+  local CNN_PARAMS dba, CNN_PARAMS = LoadLib[CNN_TYPE]()
+  cnn = assert(dba.Connect(unpack(CNN_PARAMS)))
   init_db(cnn)
 end
 
@@ -679,7 +721,7 @@ end
 
 for _, str in ipairs{
   "odbc.dba",
-  -- "lsql",
+  -- "luasql",
   -- "odbc.luasql",
 } do 
   print()
