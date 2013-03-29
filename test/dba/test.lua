@@ -5,7 +5,6 @@ local CreateConnect = {
       Driver   = "SQLite3 ODBC Driver";
       Database = ":memory:";
     }
-    if cnn then cnn:setautoclosestmt(true) end
     return cnn, err
   end;
 

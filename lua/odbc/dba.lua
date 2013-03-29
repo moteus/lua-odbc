@@ -185,6 +185,7 @@ end
 local function Connection_new(env, ...)
   local cnn, err = env:connection_impl()
   if not cnn then return nil, err end
+  cnn:setautoclosestmt(true)
 
   set_user_val(cnn, {
     params = pack_n(...);
