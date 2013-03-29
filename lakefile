@@ -21,6 +21,7 @@ DEFINES = {
   'LODBC_MIN_PAR_BUFSIZE=64';
   -- 'LODBC_FREE_PAR_AT_CLEAR';
   -- 'LODBC_USE_LUA_REGISTRY';
+  -- 'LODBC_USE_UDPTR_AS_KEY';
 }
 
 lodbc = c.shared{'core', 

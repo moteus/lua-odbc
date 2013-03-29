@@ -293,21 +293,6 @@ static int env_connection(lua_State *L){
   return lodbc_connection_create(L, hdbc, env, 1, 1);
 }
 
-#if 0
-
-static int env_getuservalue(lua_State *L){
-  lua_rawgetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getenv(L));
-  return 1;
-}
-
-static int env_setuservalue(lua_State *L){
-  lua_settop(L, 2);
-  lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getenv(L));
-  return 1;
-}
-
-#endif
-
 static int env_getuservalue(lua_State *L){
   lodbc_getenv(L);
   lodbc_get_user_value(L, 1);

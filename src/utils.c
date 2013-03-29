@@ -375,6 +375,30 @@ int lodbc_iscallable(lua_State*L, int idx){
   return ret;
 }
 
+#ifdef LODBC_USE_UDPTR_AS_KEY
+
+void lodbc_init_user_value(lua_State*L){
+}
+
+void lodbc_get_user_value(lua_State *L, int keyindex){
+  int top = lua_gettop(L);
+  void *key = lua_touserdata(L, keyindex);
+  assert(key);
+  lua_rawgetp(L, LODBC_LUA_REGISTRY, key);
+  assert((top+1) == lua_gettop(L));
+}
+
+void lodbc_set_user_value(lua_State *L, int keyindex){
+  int top = lua_gettop(L);
+  void *key = lua_touserdata(L, keyindex);
+  assert(lua_gettop(L) >= 2); // ... key, ..., value
+  assert(key);
+  lua_rawsetp(L, LODBC_LUA_REGISTRY, key);
+  assert((top-1) == lua_gettop(L));
+}
+
+#else
+
 void lodbc_init_user_value(lua_State*L){
   int top = lua_gettop(L);
   lua_newtable(L);
@@ -407,3 +431,5 @@ void lodbc_set_user_value(lua_State*L, int keyindex){
   lua_pop(L, 1);                                        // ... key, ...
   assert((top-1) == lua_gettop(L));
 }
+
+#endif
