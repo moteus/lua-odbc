@@ -313,7 +313,7 @@ end
 function Connection:exec(...)
   local res, err = self:execute(...)
   if not res then return nil, err end
-  if type(res) == 'userdata' then 
+  if type(res) ~= 'number' then 
     res:destroy()
     return nil, ERROR.ret_cursor
   end
@@ -323,7 +323,7 @@ end
 function Connection:first_row(...)
   local stmt, err = self:execute(...)
   if not stmt then return nil, err end
-  if type(stmt) ~= 'userdata' then return nil, ERROR.no_cursor end
+  if type(stmt) == 'number' then return nil, ERROR.no_cursor end
   local args = pack_n(stmt:fetch())
   stmt:destroy()
   return unpack_n(args)
@@ -332,7 +332,7 @@ end
 local function Connection_first_Xrow(self, fetch_mode, ...)
   local stmt, err = self:execute(...)
   if not stmt then return nil, err end
-  if type(stmt) ~= 'userdata' then return nil, ERROR.no_cursor end
+  if type(stmt) == 'number' then return nil, ERROR.no_cursor end
   local row, err = stmt:fetch({}, fetch_mode)
   stmt:destroy()
   if not row then return nil, err end
@@ -359,7 +359,7 @@ local function Connection_Xeach(self, fetch_mode, sql, ...)
 
   local stmt, err = self:execute(sql, params)
   if not stmt then return nil, err end
-  if type(stmt) ~= 'userdata' then return nil, ERROR.no_cursor end
+  if type(stmt) == 'number' then return nil, ERROR.no_cursor end
   stmt:setdestroyonclose(true)
   return stmt:foreach(fetch_mode, true, callback)
 end
@@ -375,7 +375,7 @@ function Connection:teach(...) return Connection_Xeach(self, 'an', ...) end
 local function Connection_Xrows(self, fetch_mode, sql, params)
   local stmt, err = self:execute(sql, params)
   if not stmt then throw(err, 2) end
-  if type(stmt) ~= 'userdata' then throw(ERROR.no_cursor, 2) end
+  if type(stmt) == 'number' then throw(ERROR.no_cursor, 2) end
   stmt:setdestroyonclose(true)
 
   return rows(stmt, fetch_mode)
@@ -391,8 +391,14 @@ function Connection:trows(...) return Connection_Xrows(self, 'an', ...) end
 
 function Connection:fetch_all(fetch_mode, sql, param)
   assert(type(fetch_mode) == 'string')
+  assert(type(sql) == 'string')
   local result = {}
-  local ok, err = Connection_Xeach(self, fetch_mode, sql, param, collect(result))
+  local ok, err
+  if param then
+    ok, err = Connection_Xeach(self, fetch_mode, sql, param, collect(result))
+  else
+    ok, err = Connection_Xeach(self, fetch_mode, sql, collect(result))
+  end
   if err == nil then return result end
   return nil, err
 end

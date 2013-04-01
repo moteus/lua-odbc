@@ -1,3 +1,11 @@
+function prequire(...)
+  local ok, mod = pcall(require, ...)
+  if not ok then return mod, ... end
+  return nil, mod
+end
+
+prequire"luacov"
+
 local LoadLib = {
   ["odbc.dba"] = function()
     return require "odbc.dba",{
@@ -133,6 +141,10 @@ function test_reconnect()
   assert_true(cnn:disconnect())
   assert_false(not not cnn:connected())
   assert_true(not not cnn:connect())
+end
+
+function test_exec_fail()
+  assert_nil(cnn:exec("select ID, Name from Agent order by ID"))
 end
 
 function test_each()
@@ -304,6 +316,38 @@ function test_apply_params()
   ]],{NAME="Agent#1"}))
 end
 
+function test_fetch_all()
+  local sql = "select ID, Name from Agent order by ID"
+  local t = assert_table(cnn:fetch_all("n", sql))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+  
+  local t = assert_table(cnn:fetch_all("a", sql))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row.ID))
+    assert_nil(row[1])
+  end
+
+  local t = assert_table(cnn:fetch_all("an", sql))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_equal(i, to_n(row.ID))
+  end
+
+  local sql = "select ID, Name from Agent where ID=:ID order by ID"
+  local t = assert_table(cnn:fetch_all("n", sql, {ID=1}))
+  assert_equal(1, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+end
+
 local _ENV = TEST_CASE'Query'
 
 local dba, cnn, qry
@@ -439,6 +483,11 @@ function test_create()
   assert_equal(CNN_ROWS, n)
   qry:destroy()
 
+end
+
+function test_exec_fail()
+  qry = assert(cnn:query())
+  assert_nil(qry:exec("select ID, Name from Agent order by ID"))
 end
 
 function test_each()
@@ -595,6 +644,29 @@ function test_prepare()
   qry:each(do_test)
   assert_equal(CNN_ROWS, n)
   qry:destroy()
+
+  n = 0
+  qry = assert(cnn:prepare(sql))
+  assert_true(qry:bind("ID", par.ID))
+  qry:each(do_test)
+  assert_equal(CNN_ROWS, n)
+  qry:destroy()
+
+  if qry.bindnum then
+    n = 0
+    qry = assert(cnn:prepare(sql))
+    assert_true(qry:bind(1, par.ID))
+    qry:each(do_test)
+    assert_equal(CNN_ROWS, n)
+    qry:destroy()
+
+    n = 0
+    qry = assert(cnn:prepare(sql))
+    assert_true(qry:bind{par.ID})
+    qry:each(do_test)
+    assert_equal(CNN_ROWS, n)
+    qry:destroy()
+  end
 end
 
 function test_unprepare()
@@ -614,8 +686,8 @@ function test_destroy()
   assert_false(qry:closed())
   assert_false(qry:destroyed())
   assert_pass(function() cnn:destroy() end)
-  assert_pass(function() qry:closed()  end)
-  assert_true(qry:closed())
+  -- assert_pass(function() qry:closed()  end)
+  -- assert_true(qry:closed())
   assert_true(qry:destroyed())
   assert_pass(function() qry:destroy() end)
 end
@@ -717,6 +789,95 @@ function test_config()
   
   qry:set_config("IGNORE_NAMED_PARAMS", nil)
   assert_equal( p2, qry:get_config("IGNORE_NAMED_PARAMS")  )
+end
+
+function test_fetch_all()
+  local sql = "select ID, Name from Agent order by ID"
+  qry = assert(cnn:query(sql))
+  local t = assert_table(qry:fetch_all("n"))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+  assert_true(qry:destroy())
+
+  qry = assert(cnn:query(sql))
+  local t = assert_table(qry:fetch_all("a"))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row.ID))
+    assert_nil(row[1])
+  end
+  assert_true(qry:destroy())
+
+  qry = assert(cnn:query(sql))
+  local t = assert_table(qry:fetch_all("an"))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_equal(i, to_n(row.ID))
+  end
+  assert_true(qry:destroy())
+
+  qry = assert(cnn:query())
+  local t = assert_table(qry:fetch_all("n", sql))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+  assert_true(qry:destroy())
+
+  qry = assert(cnn:query())
+  local t = assert_table(qry:fetch_all("a", sql))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row.ID))
+    assert_nil(row[1])
+  end
+  assert_true(qry:destroy())
+
+  qry = assert(cnn:query())
+  local t = assert_table(qry:fetch_all("an", sql))
+  assert_equal(CNN_ROWS, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_equal(i, to_n(row.ID))
+  end
+  assert_true(qry:destroy())
+
+  sql = "select ID, Name from Agent where ID=:ID order by ID"
+  qry = assert(cnn:query(sql))
+  local t = assert_table(qry:fetch_all("n", {ID=1}))
+  assert_equal(1, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+  assert_true(qry:destroy())
+
+  sql = "select ID, Name from Agent where ID=:ID order by ID"
+  qry = assert(cnn:query())
+  local t = assert_table(qry:fetch_all("n", sql, {ID=1}))
+  assert_equal(1, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+  assert_true(qry:destroy())
+
+  sql = "select ID, Name from Agent where ID=:ID order by ID"
+  qry = assert(cnn:query(sql))
+  assert_true(qry:bind("ID", 1))
+  local t = assert_table(qry:fetch_all("n"))
+  assert_equal(1, #t)
+  for i, row in ipairs(t)do
+    assert_equal(i, to_n(row[1]))
+    assert_nil(row.ID)
+  end
+  assert_true(qry:destroy())
+
 end
 
 for _, str in ipairs{
