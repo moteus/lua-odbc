@@ -441,11 +441,13 @@ Statement.bind_impl    = Statement.bind
 Statement.execute_impl = Statement.execute
 
 function Statement:vbind_col(i, val, ...)
-  return val:bind_col(self, i, ...)
+  --- @todo better detect of using proxy module
+  return val:bind_col(self._self or self, i, ...)
 end
 
 function Statement:vbind_param(i, val, ...)
-  return val:bind_param(self, i, ...)
+  --- @todo better detect of using proxy module
+  return val:bind_param(self._self or self, i, ...)
 end
 
 local fix_types = {

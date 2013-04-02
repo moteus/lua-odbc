@@ -880,6 +880,50 @@ function test_fetch_all()
 
 end
 
+local _ENV = TEST_CASE'ODBC'
+
+local dba, cnn, qry
+local IS_ODBC
+
+function setup()
+  local CNN_PARAMS dba, CNN_PARAMS = LoadLib[CNN_TYPE]()
+  cnn = assert(dba.Connect(unpack(CNN_PARAMS)))
+  IS_ODBC = not not (cnn.statement and cnn.driverconnect)
+  if not IS_ODBC then return end
+  init_db(cnn)
+end
+
+function teardown()
+  if qry then qry:destroy() end
+  if cnn then cnn:destroy() end
+end
+
+function test_bind_variables()
+  if not IS_ODBC then return end
+  local ID = dba.ulong(555)
+  local sql = "select ID, Name from Agent where 555=cast(:ID as INTEGER) order by ID"
+
+  local n
+  local function do_test(ID, Name) 
+    n = n + 1
+    assert_equal(n, to_n(ID))
+  end
+
+  n = 0
+  qry = assert(cnn:query())
+  qry:each(sql, {ID=ID}, do_test)
+  assert_equal(CNN_ROWS, n)
+  qry:destroy()
+
+  n = 0
+  qry = assert(cnn:query(sql))
+  assert_true(qry:bind("ID", ID))
+  qry:each(do_test)
+  assert_equal(CNN_ROWS, n)
+  qry:destroy()
+
+end
+
 for _, str in ipairs{
   "odbc.dba",
   -- "luasql",
