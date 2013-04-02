@@ -145,6 +145,15 @@ if not Environment.connection_impl then
 
 Environment.connection_impl = Environment.connection
 
+function Environment:set_login_timeout(ms)
+  assert((ms == nil) or (type(ms) == "number"))
+  user_val(self).login_timeout = ms
+end
+
+function Environment:get_login_timeout()
+  return user_val(self).login_timeout
+end
+
 function Environment:connection(...)
   return Connection_new(self, ...)
 end
@@ -152,6 +161,8 @@ end
 function Environment:connect(...)
   local cnn, err = self:connection(...)
   if not cnn then return nil, err end
+  local ms = self:get_login_timeout()
+  if ms then cnn:set_login_timeout(ms) end
   local ok, err = cnn:connect()
   if not ok then cnn:destroy() return nil, err end
   return cnn
@@ -740,6 +751,8 @@ local CONNECTION_RENAME = {
   get_trace            = "gettrace";
   set_trace_file       = "settracefile";
   get_trace_file       = "gettracefile";
+  set_login_timeout    = "setlogintimeout";
+  get_login_timeout    = "getlogintimeout";
   supports_catalg_name = "isCatalogName";
 }
 
