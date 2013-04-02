@@ -151,21 +151,6 @@ static int stmt_connection(lua_State *L){
   return 1;
 }
 
-#if 0 
-
-static int stmt_getuservalue(lua_State *L){
-  lua_rawgetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getstmt(L));
-  return 1;
-}
-
-static int stmt_setuservalue(lua_State *L){
-  lua_settop(L, 2);
-  lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getstmt(L));
-  return 1;
-}
-
-#endif
-
 static int stmt_getuservalue(lua_State *L){
   lodbc_getstmt(L);
   lodbc_get_user_value(L, 1);

@@ -194,21 +194,6 @@ static int cnn_statement (lua_State *L) {
   return lodbc_statement_create(L,hstmt,cnn,1,1,0,0);
 }
 
-#if 0
-
-static int cnn_getuservalue(lua_State *L){
-  lua_rawgetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getcnn(L));
-  return 1;
-}
-
-static int cnn_setuservalue(lua_State *L){
-  lua_settop(L, 2);
-  lua_rawsetp(L, LODBC_LUA_REGISTRY, (void*)lodbc_getcnn(L));
-  return 1;
-}
-
-#endif
-
 static int cnn_getuservalue(lua_State *L){
   lodbc_getcnn(L);
   lodbc_get_user_value(L, 1);
