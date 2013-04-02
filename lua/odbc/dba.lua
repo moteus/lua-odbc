@@ -757,11 +757,19 @@ local CONNECTION_RENAME = {
   set_login_timeout    = "setlogintimeout";
   get_login_timeout    = "getlogintimeout";
   supports_catalg_name = "isCatalogName";
+  get_async_mode       = "getasyncmode";
+  set_async_mode       = "setasyncmode";
+  supports_async_statement  = "supportsAsyncStatement";
+  supports_async_query      = "supportsAsyncStatement";
+  supports_async_connection = "supportsAsyncConnection";
+  supports_async_mode       = "supportsAsyncConnection"
 }
 
 local STATEMENT_RENAME = {
   set_autoclose       = "setautoclose";
   get_autoclose       = "getautoclose";
+  get_async_mode      = "getasyncmode";
+  set_async_mode      = "setasyncmode";
   unprepare           = "reset";
 }
 
@@ -776,6 +784,20 @@ for new, old in pairs(STATEMENT_RENAME) do
   assert(nil ~= Statement[old])
   Statement[new] = Statement[old]
 end
+
+------------------------------------------------------------------
+do -- async
+
+function Connection:supports_async_mode()
+  return self:supportsAsyncStatement()
+end
+
+function Statement:supports_async_mode()
+  return self:connection():supportsAsyncStatement()
+end
+
+end
+------------------------------------------------------------------
 
 ------------------------------------------------------------------
 do

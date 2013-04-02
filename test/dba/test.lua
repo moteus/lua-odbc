@@ -61,7 +61,7 @@ end
 
 local _ENV = TEST_CASE'Environment'
 
-local env, dba
+local env, dba, cnn
 
 function setup()
   local CNN_PARAMS dba, CNN_PARAMS = LoadLib[CNN_TYPE]()
@@ -70,6 +70,7 @@ function setup()
 end
 
 function teardown()
+  if cnn then cnn:destroy() end
   if env then env:destroy() end
 end
 
@@ -922,6 +923,28 @@ function test_bind_variables()
   assert_equal(CNN_ROWS, n)
   qry:destroy()
 
+  
+  n = 0
+  qry = assert(cnn:query(sql))
+  assert_true(qry:bind("ID", ID))
+  local vID = assert(qry:vbind_col_ulong(1))
+  assert(qry:open())
+  while qry:vfetch() do
+    n = n + 1
+    assert_equal(n, vID:get())
+  end
+  assert_equal(CNN_ROWS, n)
+  qry:destroy()
+end
+
+function test_async()
+  if not IS_ODBC then return end
+  assert_boolean(cnn:supports_async_mode())
+  assert_boolean(cnn:supports_async_connection())
+  assert_boolean(cnn:supports_async_statement())
+  assert_boolean(cnn:supports_async_query())
+  qry = assert(cnn:query())
+  assert_boolean(qry:supports_async_mode())
 end
 
 for _, str in ipairs{
