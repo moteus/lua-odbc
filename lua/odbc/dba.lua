@@ -2,7 +2,8 @@
 -- implement lua-dba interface
 --
 
-local odbc = require "odbc.core"
+-- local odbc = require "odbc.core"
+local odbc  = require "odbc.proxy"
 local utils = require "odbc.dba.utils"
 
 local unpack       = utils.unpack;
