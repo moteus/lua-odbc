@@ -72,7 +72,15 @@ static int stmt_destroy (lua_State *L) {
   if(!(stmt->flags & LODBC_FLAG_DESTROYED)){
 
     if (stmt->flags & LODBC_FLAG_OPENED){
-      SQLCloseCursor(stmt->handle);
+#ifdef LODBC_CHECK_ERROR_ON_DESTROY
+      SQLRETURN ret =
+#endif
+
+        SQLCloseCursor(stmt->handle);
+
+#ifdef LODBC_CHECK_ERROR_ON_DESTROY
+      if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, stmt->handle);
+#endif
       stmt->flags &= ~LODBC_FLAG_OPENED;
     }
 
@@ -80,7 +88,7 @@ static int stmt_destroy (lua_State *L) {
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
       SQLRETURN ret =
 #endif
-      SQLFreeHandle (hDBC, stmt->handle);
+        SQLFreeHandle (hSTMT, stmt->handle);
 
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
       if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, stmt->handle);
