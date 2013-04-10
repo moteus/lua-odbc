@@ -459,29 +459,29 @@ local buf_types = {'char', 'binary', 'wchar'}
 
 for _, tname in ipairs(fix_types) do
   Statement["vbind_col_" .. tname] = function(self, ...)
-    return odbc[tname]():bind_col(self, ...)
+    return odbc[tname]():bind_col(self._self or self, ...)
   end
 
   Statement["vbind_param_" .. tname] = function(self, i, val, ...)
-    return odbc[tname](val):bind_param(self, i, ...)
+    return odbc[tname](val):bind_param(self._self or self, i, ...)
   end
 end
 
 for _, tname in ipairs(buf_types) do
   Statement["vbind_col_" .. tname] = function(self, i, size, ...)
-    return odbc[tname](size):bind_col(self, i, ...)
+    return odbc[tname](size):bind_col(self._self or self, i, ...)
   end
 
   Statement["vbind_param_" .. tname] = function(self, i, size, ...)
     if type(size) == 'string' then
-      return odbc[tname](size):bind_param(self, i, ...)
+      return odbc[tname](size):bind_param(self._self or self, i, ...)
     end
     assert(type(size) == 'number')
     local val = ...
     if type(val) == 'string' then
-      return odbc[tname](size, val):bind_param(self, i, select(2, ...))
+      return odbc[tname](size, val):bind_param(self._self or self, i, select(2, ...))
     end
-    return odbc[tname](size):bind_param(self, i, ...)
+    return odbc[tname](size):bind_param(self._self or self, i, ...)
   end
 end
 
