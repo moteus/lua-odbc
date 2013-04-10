@@ -67,4 +67,6 @@ void lodbc_get_user_value(lua_State*L, int keyindex);
 
 void lodbc_set_user_value(lua_State*L, int keyindex);
 
+int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE handle, const char** states, int n);
+
 #endif

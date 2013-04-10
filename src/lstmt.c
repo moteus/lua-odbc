@@ -9,6 +9,14 @@
 
 LODBC_EXPORT const char *LODBC_STMT = LODBC_PREFIX "Statement";
 
+static const char *CLOSE_CURSOR_STATES[] = {
+  "24000", // Invalid cursor state.
+  "34000", // Cursor not open
+};
+static const int CLOSE_CURSOR_STATES_N = 2;
+
+#define IS_CURSOR_CLOSED(T,H) (lodbc_test_state(T, H, CLOSE_CURSOR_STATES, CLOSE_CURSOR_STATES_N) >= 0)
+
 //-----------------------------------------------------------------------------
 // declaretions
 //{----------------------------------------------------------------------------
@@ -79,7 +87,11 @@ static int stmt_destroy (lua_State *L) {
         SQLCloseCursor(stmt->handle);
 
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
-      if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, stmt->handle);
+      if (lodbc_iserror(ret)){
+        if(!IS_CURSOR_CLOSED(hSTMT, stmt->handle)){
+          return lodbc_fail(L, hSTMT, stmt->handle);
+        }
+      }
 #endif
       stmt->flags &= ~LODBC_FLAG_OPENED;
     }
@@ -91,7 +103,7 @@ static int stmt_destroy (lua_State *L) {
         SQLFreeHandle (hSTMT, stmt->handle);
 
 #ifdef LODBC_CHECK_ERROR_ON_DESTROY
-      if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, stmt->handle);
+      if (lodbc_iserror(ret)) return lodbc_fail(L, hSTMT, stmt->handle);
 #endif
 
       stmt->handle = SQL_NULL_HANDLE;
@@ -139,8 +151,19 @@ static int stmt_close(lua_State *L){
   }
 
   if(stmt->flags & LODBC_FLAG_OPENED){
-    /* SQLRETURN ret = */SQLCloseCursor(stmt->handle);
-    //! @todo check ret code
+#ifdef LODBC_CHECK_ERROR_ON_DESTROY
+    SQLRETURN ret =
+#endif
+
+      SQLCloseCursor(stmt->handle);
+
+#ifdef LODBC_CHECK_ERROR_ON_DESTROY
+    if (lodbc_iserror(ret)){
+      if(!IS_CURSOR_CLOSED(hSTMT, stmt->handle)){
+        return lodbc_fail(L, hSTMT, stmt->handle);
+      }
+    }
+#endif
     stmt->flags &= ~LODBC_FLAG_OPENED;
   }
   stmt->aflags = LODBC_ASTATE_NONE;

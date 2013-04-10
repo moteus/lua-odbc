@@ -443,3 +443,20 @@ void lodbc_set_user_value(lua_State*L, int keyindex){
 }
 
 #endif
+
+int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE handle, const char** states, int n){
+  SQLCHAR State[6];
+  SQLSMALLINT i, j;
+
+  i = 1;
+  while (1) {
+    SQLRETURN ret = SQLGetDiagRec(type, handle, i, State, NULL, NULL, 0, NULL);
+    if (ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) return -1;
+    for(j = 0;j<n;++j){
+      if (0 == strcmp(states[j], State)){
+        return j;
+      }
+    }
+    i++;
+  }
+}
