@@ -40,8 +40,10 @@ build = {
       libraries = {'odbc32', 'odbccp32'};
       incdirs = {"./include"},
     };
-    [ "odbc"         ] = "lua/odbc.lua";
-    [ "odbc.luasql"  ] = "lua/odbc/luasql.lua";
-    [ "odbc.dba"     ] = "lua/odbc/dba.lua";
+    [ "odbc"           ] = "lua/odbc.lua";
+    [ "odbc.luasql"    ] = "lua/odbc/luasql.lua";
+    [ "odbc.dba"       ] = "lua/odbc/dba.lua";
+    [ "odbc.dba.utils" ] = "lua/odbc/dba/utils.lua";
+    [ "odbc.proxy"     ] = "lua/odbc/proxy.lua";
   }
 }
