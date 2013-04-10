@@ -94,3 +94,6 @@ end
 
 print("execute counter:", COUNTER)
 ```
+
+## odbc.dba module ##
+Implementaion of [dba](http://moteus.github.io/dba/index.html) API
