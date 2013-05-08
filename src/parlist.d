@@ -1,1 +1,0 @@
-src\parlist.obj: src\parlist.c f:\e\projects\lua-odbc\src\lodbc.h G:\lua\5.2\include\lua.h g:\lua\5.2\include\luaconf.h G:\lua\5.2\include\lauxlib.h g:\lua\5.2\include\lua.h f:\e\projects\lua-odbc\src\utils.h f:\e\projects\lua-odbc\src\lodbc.h f:\e\projects\lua-odbc\src\lerr.h f:\e\projects\lua-odbc\src\lodbc.h f:\e\projects\lua-odbc\src\parlist.h

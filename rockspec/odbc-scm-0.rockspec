@@ -1,8 +1,8 @@
 package = "odbc"
-version = "scm.dba-1"
+version = "scm-0"
 source = {
-  url = "https://github.com/moteus/lua-odbc/archive/dba.zip",
-  dir = "lua-odbc-dba",
+  url = "https://github.com/moteus/lua-odbc/archive/master.zip",
+  dir = "lua-odbc-master",
 }
 
 description = {
@@ -36,6 +36,8 @@ build = {
         'LODBC_MIN_PAR_BUFSIZE=64';
         -- 'LODBC_FREE_PAR_AT_CLEAR';
         -- 'LODBC_USE_LUA_REGISTRY';
+        -- 'LODBC_USE_UDPTR_AS_KEY';
+        -- 'LODBC_USE_NULL_AS_NIL';
       };
       libraries = {'odbc32', 'odbccp32'};
       incdirs = {"./include"},
