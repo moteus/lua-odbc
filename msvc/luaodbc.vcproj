@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(LUA_DIR)\include&quot;;..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LUAODBC_EXPORTS;LODBC_ERROR_AS_OBJECT"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LUAODBC_EXPORTS;LODBC_ERROR_AS_OBJECT;LODBC_CHECK_ERROR_ON_DESTROY"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
