@@ -1,0 +1,11 @@
+*.o
+*.obj
+*.d
+*.suo
+*.lib
+*.exp
+*.lo
+*.la
+*.tar.gz
+*.zip
+*~
