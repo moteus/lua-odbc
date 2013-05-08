@@ -12,21 +12,37 @@ local Cursor      = {__metatable = "LuaSQL: you're not allowed to get this metat
 
 local unpack = unpack or table.unpack
 
-local function conv_null(...)
-  if odbc.NULL == nil then return ... end
-  if type((...)) == "table" then
-    local t = (...)
-    for k,v in pairs(t)do
-      if v == odbc.NULL then t[k] = nil end
+local conv_null
+
+if odbc.NULL ~= nil then
+
+  local ok, va = pcall(require, "vararg")
+  if not ok then va = nil end
+
+  local function null2nil(v)
+    if v == odbc.NULL then return nil end
+    return v
+  end
+
+  conv_null = function (...)
+    if type((...)) == "table" then
+      local t = (...)
+      for k, v in pairs(t) do
+        t[k] = null2nil(t[k])
+      end
+      return t
     end
-    return t
+
+    if va then return va.map(null2nil, ...) end
+
+    local t, n = {...}, select('#', ...)
+    for i = 1, n do
+      if t[i] == odbc.NULL then t[i] = nil end
+    end
+    return unpack(t, 1, n)
   end
-  local t, n = {...}, select('#', ...)
-  for i = 1, n do
-    if t[i] == odbc.NULL then t[i] = nil end
-  end
-  return unpack(t, 1, n)
-end
+
+else conv_null = function (...) return ... end end
 
 local Environment_new, Connection_new, Cursor_new
 
