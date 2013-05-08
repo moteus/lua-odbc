@@ -12,7 +12,10 @@ const char
 
 static const char *LODBC_USER_VALUE = "User value storage";
 static const int LODBC_NULL_VALUE = -1;
+
+#ifndef LODBC_USE_NULL_AS_NIL
 const int *LODBC_NULL = &LODBC_NULL_VALUE;
+#endif
 
 void lodbc_stackdump( lua_State* L ) {
   int top= lua_gettop(L);
@@ -377,6 +380,18 @@ int lodbc_iscallable(lua_State*L, int idx){
   return ret;
 }
 
+#ifdef LODBC_USE_NULL_AS_NIL
+
+void lodbc_pushnull(lua_State*L){
+  lua_pushnil(L);
+}
+
+int lodbc_isnull(lua_State*L, int idx){
+  return (lua_type(L, idx) == LUA_TNIL)?1:0;
+}
+
+#else
+
 void lodbc_pushnull(lua_State*L){
   lua_pushlightuserdata(L, (void*)LODBC_NULL);
 }
@@ -384,6 +399,8 @@ void lodbc_pushnull(lua_State*L){
 int lodbc_isnull(lua_State*L, int idx){
   return (lua_touserdata(L, idx) == LODBC_NULL)?1:0;
 }
+
+#endif
 
 #ifdef LODBC_USE_UDPTR_AS_KEY
 
