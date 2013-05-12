@@ -1,3 +1,5 @@
+local IS_WINDOWS = (require"package".config:sub(1,1) == '\\')
+
 function prequire(...)
   local ok, mod = pcall(require, ...)
   if not ok then return mod, ... end
@@ -10,8 +12,7 @@ local LoadLib = {
   ["odbc.dba"] = function()
     return require "odbc.dba",{
       {
-        Driver   = "SQLite3";
-        -- Driver   = "SQLite3 ODBC Driver"; -- on windows
+        Driver   = IS_WINDOWS and "SQLite3 ODBC Driver" or "SQLite3";
         Database = ":memory:";
       }
     }
