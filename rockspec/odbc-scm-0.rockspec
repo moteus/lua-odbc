@@ -20,6 +20,15 @@ dependencies = {
 build = {
   type = "builtin",
   copy_directories = {"test"},
+
+  platforms = {
+    windows = { modules = {
+      [ "odbc.core"    ] = {
+        libraries = {'odbc32', 'odbccp32'};
+      }
+    }},
+  },
+
   modules = {
     [ "odbc.core"    ] = {
       sources = {
@@ -31,6 +40,7 @@ build = {
         -- 'src/driverinfo.c',
       };
       defines = {
+        "UNIXODBC";
         'LUAODBC_EXPORTS';
         'LODBC_ERROR_AS_OBJECT';
         'LODBC_MIN_PAR_BUFSIZE=64';
@@ -39,7 +49,6 @@ build = {
         -- 'LODBC_USE_UDPTR_AS_KEY';
         -- 'LODBC_USE_NULL_AS_NIL';
       };
-      libraries = {'odbc32', 'odbccp32'};
       incdirs = {"./include"},
     };
     [ "odbc"           ] = "lua/odbc.lua";
