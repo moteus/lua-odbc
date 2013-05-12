@@ -1,3 +1,9 @@
+print("------------------------------------")
+print("Lua version: " .. (_G.jit and _G.jit.version or _G._VERSION))
+print("------------------------------------")
+print("") 
+
+local HAS_RUNNER = not not lunit
 local IS_WINDOWS = (require"package".config:sub(1,1) == '\\')
 
 function prequire(...)
@@ -30,16 +36,6 @@ local LoadLib = {
   end
 }
 
-local CNN_TYPE = 'lsql'
-local CNN_ROWS = 10
-local function init_db(cnn)
-  local fmt = string.format
-  assert(cnn:exec"create table Agent(ID INTEGER PRIMARY KEY, Name char(32))")
-  for i = 1, CNN_ROWS do
-    assert(cnn:exec(fmt("insert into Agent(ID,NAME)values(%d, 'Agent#%d')", i, i)))
-  end
-end
-
 local function pack_n(...)
   return { n = select("#", ...), ... }
 end
@@ -61,7 +57,21 @@ TEST_CASE = lunit.TEST_CASE or function (name)
   end
 end
 
-local _ENV = TEST_CASE'Environment'
+local function make_tast(name)
+
+local CNN_TYPE = name
+
+local CNN_ROWS = 10
+
+local function init_db(cnn)
+  local fmt = string.format
+  assert(cnn:exec"create table Agent(ID INTEGER PRIMARY KEY, Name char(32))")
+  for i = 1, CNN_ROWS do
+    assert(cnn:exec(fmt("insert into Agent(ID,NAME)values(%d, 'Agent#%d')", i, i)))
+  end
+end
+
+local _ENV = TEST_CASE('Environment.' .. name) do
 
 local env, dba, cnn
 
@@ -92,7 +102,9 @@ function test_interface()
   assert_function(env.get_config)
 end
 
-local _ENV = TEST_CASE'Connection'
+end
+
+local _ENV = TEST_CASE('Connection.' .. name) do
 
 local cnn, dba
 
@@ -351,7 +363,9 @@ function test_fetch_all()
   end
 end
 
-local _ENV = TEST_CASE'Query'
+end
+
+local _ENV = TEST_CASE('Query.' .. name) do
 
 local dba, cnn, qry
 
@@ -883,7 +897,9 @@ function test_fetch_all()
 
 end
 
-local _ENV = TEST_CASE'ODBC'
+end
+
+local _ENV = TEST_CASE('ODBC.' .. name) do
 
 local dba, cnn, qry
 local IS_ODBC
@@ -949,13 +965,16 @@ function test_async()
   assert_boolean(qry:supports_async_mode())
 end
 
+end
+
+end -- make_tast
+
 for _, str in ipairs{
   "odbc.dba",
   -- "luasql",
   -- "odbc.luasql",
 } do 
-  print()
-  print("---------------- TEST " .. str)
-  CNN_TYPE = str
-  lunit.run()
+  make_tast(str)
 end
+
+if not HAS_RUNNER then lunit.run() end
