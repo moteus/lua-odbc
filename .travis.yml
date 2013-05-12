@@ -10,7 +10,7 @@ env:
 
 branches:
   only:
-    - travis-test
+    - master
 
 before_install:
   - "sudo apt-get install $LUA"
