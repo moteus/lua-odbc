@@ -33,6 +33,11 @@ build = {
         libraries = {'odbc32', 'odbccp32'};
       }
     }},
+    unix = { modules = {
+      [ "odbc.core"    ] = {
+        libraries = {'odbc'};
+      }
+    }},
   },
 
   modules = {
