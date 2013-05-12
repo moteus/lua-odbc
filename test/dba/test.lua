@@ -10,7 +10,8 @@ local LoadLib = {
   ["odbc.dba"] = function()
     return require "odbc.dba",{
       {
-        Driver   = "SQLite3 ODBC Driver";
+        Driver   = "SQLite3";
+        -- Driver   = "SQLite3 ODBC Driver"; -- on windows
         Database = ":memory:";
       }
     }
