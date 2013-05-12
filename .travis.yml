@@ -27,7 +27,7 @@ before_install:
   - cd $TRAVIS_BUILD_DIR
 
 install:
-  - sudo apt-get install libsqliteodbc unixodbc 
+  - sudo apt-get install libsqliteodbc unixodbc unixodbc-dev
   - sudo luarocks install lunitx
   - sudo luarocks make rockspec/odbc-scm-0.rockspec
 
