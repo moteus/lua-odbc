@@ -50,7 +50,7 @@ local lunit = require "lunit"
 local lunit    = require "lunit"
 local IS_LUA52 = _VERSION >= 'Lua 5.2'
 
-TEST_CASE = function (name)
+TEST_CASE = lunit.TEST_CASE or function (name)
   if not IS_LUA52 then
     module(name, package.seeall, lunit.testcase)
     setfenv(2, _M)
