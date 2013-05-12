@@ -17,6 +17,12 @@ dependencies = {
   "lua >= 5.1",
 }
 
+external_dependencies = {
+  ODBC = {
+    header  = "sql.h",
+  }
+}
+
 build = {
   type = "builtin",
   copy_directories = {"test"},
@@ -49,7 +55,7 @@ build = {
         -- 'LODBC_USE_UDPTR_AS_KEY';
         -- 'LODBC_USE_NULL_AS_NIL';
       };
-      incdirs = {"./include"},
+      incdirs = {"./include","$(ODBC_INCDIR)"},
     };
     [ "odbc"           ] = "lua/odbc.lua";
     [ "odbc.luasql"    ] = "lua/odbc/luasql.lua";
