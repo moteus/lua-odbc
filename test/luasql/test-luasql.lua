@@ -8,11 +8,11 @@ require "../config"
 TOTAL_FIELDS = 40
 TOTAL_ROWS = 40 --unused
 
-DEFINITION_STRING_TYPE_NAME = "char(50)"
+DEFINITION_STRING_TYPE_NAME = "varchar(50)"
 QUERYING_STRING_TYPE_NAME = "string"
 
-CREATE_TABLE_RETURN_VALUE = -1
-DROP_TABLE_RETURN_VALUE = -1
+CREATE_TABLE_RETURN_VALUE = 0
+DROP_TABLE_RETURN_VALUE = 0
 
 MSG_CURSOR_NOT_CLOSED = "cursor was not automatically closed by fetch"
 
@@ -57,7 +57,7 @@ function assert2 (expected, value, msg)
 	if not msg then
 		msg = ''
 	else
-		msg = msg..'\n'
+		msg = tostring(msg)..'\n'
 	end
 	return assert (value == expected,
 		msg.."wrong value ("..tostring(value).." instead of "..
