@@ -107,7 +107,7 @@ local MySQL = {
     {uid='root'};
   };
 
-  CNN_DSN = {'MyTEST', 'root', ''};
+  CNN_DSN = {'MySQL-test', 'root', ''};
 
   CREATE_TABLE_RETURN_VALUE = 0;
 

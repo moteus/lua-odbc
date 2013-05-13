@@ -31,9 +31,14 @@ before_install:
 install:
   - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
   - sudo odbcinst -i -d -f /usr/share/libmyodbc/odbcinst.ini
+  - cat /etc/odbc.ini
+  - cat ./test/mytest.odbc.ini
+  - sudo odbcinst -i -s -l -f ./test/mytest.odbc.ini
+  - cat /etc/odbc.ini
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
   - sudo luarocks make rockspec/odbc-scm-0.rockspec
-  - lua$LUA_SFX -e "odbc=require'odbc';for _,n in pairs(odbc.environment():drivers()) do print(n[1]) end"
+  - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
+  - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():datasources(print)"
 
 script: 
   - "cd test/dba && lunit.sh -i lua$LUA_SFX test.lua"
