@@ -6,11 +6,11 @@ source = {
 }
 
 description = {
-  summary = "ODBC library",
+  summary = "ODBC library for Lua",
   detailed = [[
   ]],
   homepage = "https://github.com/moteus/lua-odbc",
-  -- license = ""
+  license  = "MIT/X11",
 }
 
 dependencies = {
