@@ -666,6 +666,7 @@ luasql = require ("odbc.luasql")
 
 assert (luasql, "Could not load driver: no luasql table.")
 io.write (luasql._VERSION.." "..driver.." driver test.  "..luasql._COPYRIGHT.."\n")
+io.write ("DSN "..datasource.."\n")
 
 for i = 1, table.getn (tests) do
 	local t = tests[i]
