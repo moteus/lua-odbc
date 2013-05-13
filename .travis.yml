@@ -26,7 +26,6 @@ before_install:
   - sudo make install
   - cd $TRAVIS_BUILD_DIR
   - mysql --version
-  - mysql -e 'create database lodbc_test;'
 
 install:
   - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
