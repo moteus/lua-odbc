@@ -18,8 +18,16 @@ dependencies = {
 }
 
 external_dependencies = {
-  ODBC = {
-    header  = "sql.h",
+  platforms = { 
+    unix = {
+      ODBC = {
+        header  = 'sql.h',
+        -- library = 'odbc', -- does not work !?
+      }
+    };
+    windows = {
+      ODBC = {}
+    };
   }
 }
 
@@ -51,7 +59,7 @@ build = {
         -- 'src/driverinfo.c',
       };
       defines = {
-        "UNIXODBC";
+        'UNIXODBC';
         'LUAODBC_EXPORTS';
         'LODBC_ERROR_AS_OBJECT';
         'LODBC_MIN_PAR_BUFSIZE=64';
