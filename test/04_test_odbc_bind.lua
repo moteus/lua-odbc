@@ -3,9 +3,15 @@ require "tools"
 
 local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
+local skip      = assert(lunit.skip)
+local TEST_CASE = assert(lunit.TEST_CASE)
+local function SKIP(msg) return function() lunit.skip(msg) end end
+
 local arg = {...}
 
 local _ENV = TEST_CASE 'Statement bind'
+if not TEST_PROC_CREATE then test = SKIP(DBMS .. " does not support SP with resultset")
+else
 
 local function assert_opt_string(v, ...)
   if v == nil then return v, ... end
@@ -82,6 +88,17 @@ local function EXEC_AND_ASSERT(qrySQL)
   outBinaryVal, outDateVal, outNullVal, outDefaultVal,
   outBoolVal,outGuidVal = stmt:fetch()
 
+  if not PROC_SUPPORT_DEFAULT then
+    outBoolVal, outGuidVal = outDefaultVal, outBoolVal, outGuidVal 
+    outDefaultVal = "----"
+  end
+
+  local test_bin_val = inBinaryVal
+  if DBMS == 'MySQL' then
+    test_bin_val = inBinaryVal .. ('\0'):rep(#outBinaryVal - #inBinaryVal)
+  end
+
+
   stmt:close()
 
   -- print()
@@ -101,28 +118,37 @@ local function EXEC_AND_ASSERT(qrySQL)
   assert_equal(inUIntVal   , outUIntVal     )
   assert_equal(inDoubleVal , outDoubleVal   )
   assert_equal(inStringVal , outStringVal   )
-  assert_equal(inBinaryVal , outBinaryVal   )
+  assert_equal(test_bin_val, outBinaryVal   )
   assert_equal(inDateVal   , outDateVal     )
   assert_equal(inNullVal   , outNullVal     )
-  assert_equal(inDefaultVal, outDefaultVal  )
+  if PROC_SUPPORT_DEFAULT then
+    assert_equal(inDefaultVal, outDefaultVal  )
+  end
   assert_equal(inBoolVal   , outBoolVal     )
-  assert_equal(inGuidVal   , outGuidVal     )
+  if HAS_GUID_TYPE then
+    assert_equal(inGuidVal   , outGuidVal     )
+  end
 end
 
 local function VEXEC_AND_ASSERT(qrySQL)
   if qrySQL then assert_equal(stmt, stmt:execute(qrySQL))
   else assert_equal(stmt, stmt:execute()) end
 
-  local outIntVal     = assert( odbc.slong()              :bind_col(stmt, 1  ) )
-  local outUIntVal    = assert( odbc.ulong()              :bind_col(stmt, 2  ) )
-  local outDoubleVal  = assert( odbc.double()             :bind_col(stmt, 3  ) )
-  local outStringVal  = assert( odbc.char(#inStringVal)   :bind_col(stmt, 4  ) )
-  local outBinaryVal  = assert( odbc.binary(#inBinaryVal) :bind_col(stmt, 5  ) )
-  local outDateVal    = assert( odbc.date()               :bind_col(stmt, 6  ) )
-  local outNullVal    = assert( odbc.utinyint()           :bind_col(stmt, 7  ) )
-  local outDefaultVal = assert( odbc.ulong()              :bind_col(stmt, 8  ) )
-  local outBoolVal    = assert( odbc.bit()                :bind_col(stmt, 9  ) )
-  local outGuidVal    = assert( odbc.binary(#inGuidVal)   :bind_col(stmt, 10 ) )
+  local i = 1
+  local outIntVal     = assert( odbc.slong()              :bind_col(stmt, i ) ) i = i + 1
+  local outUIntVal    = assert( odbc.ulong()              :bind_col(stmt, i ) ) i = i + 1
+  local outDoubleVal  = assert( odbc.double()             :bind_col(stmt, i ) ) i = i + 1
+  local outStringVal  = assert( odbc.char(#inStringVal)   :bind_col(stmt, i ) ) i = i + 1
+  local outBinaryVal  = assert( odbc.binary(#inBinaryVal) :bind_col(stmt, i ) ) i = i + 1
+  local outDateVal    = assert( odbc.date()               :bind_col(stmt, i ) ) i = i + 1
+  local outNullVal    = assert( odbc.utinyint()           :bind_col(stmt, i ) ) i = i + 1
+  local outDefaultVal if PROC_SUPPORT_DEFAULT then
+    outDefaultVal = assert( odbc.ulong()              :bind_col(stmt, i ) ) i = i + 1
+  end
+  local outBoolVal    = assert( odbc.bit()                :bind_col(stmt, i ) ) i = i + 1
+  local outGuidVal    if HAS_GUID_TYPE then
+    outGuidVal    = assert( odbc.binary(#inGuidVal)   :bind_col(stmt, i ) ) i = i + 1
+  end
 
   assert_true(stmt:vfetch())
   stmt:close()
@@ -147,36 +173,47 @@ local function VEXEC_AND_ASSERT(qrySQL)
   assert_equal(inBinaryVal , outBinaryVal   :get())
   assert_equal(inDateVal   , outDateVal     :get())
   assert_equal(inNullVal   , outNullVal     :get())
-  assert_equal(inDefaultVal, outDefaultVal  :get())
+  if PROC_SUPPORT_DEFAULT then
+    assert_equal(inDefaultVal, outDefaultVal  :get())
+  end
   assert_equal(inBoolVal   , outBoolVal     :get())
-  assert_equal(x(inGuidVal), outGuidVal     :get())
+  if HAS_GUID_TYPE then
+    assert_equal(x(inGuidVal), outGuidVal     :get())
+  end
 end
 
-
 local function BIND(stmt)
-  assert_true(stmt:bindnum    (1,inIntVal    ))
-  assert_true(stmt:bindnum    (2,inUIntVal   ))
-  assert_true(stmt:bindnum    (3,inDoubleVal ))
-  assert_true(stmt:bindstr    (4,inStringVal ))
-  assert_true(stmt:bindbin    (5,inBinaryVal ))
-  assert_true(stmt:bindstr    (6,inDateVal   ))
-  assert_true(stmt:bindnull   (7             ))
-  assert_true(stmt:binddefault(8             ))
-  assert_true(stmt:bindbool   (9,inBoolVal   ))
-  assert_true(stmt:bindstr   (10,inGuidVal   ))
+  local i = 1
+  assert_true(stmt:bindnum    (i,inIntVal    )) i = i + 1
+  assert_true(stmt:bindnum    (i,inUIntVal   )) i = i + 1
+  assert_true(stmt:bindnum    (i,inDoubleVal )) i = i + 1
+  assert_true(stmt:bindstr    (i,inStringVal )) i = i + 1
+  assert_true(stmt:bindbin    (i,inBinaryVal )) i = i + 1
+  assert_true(stmt:bindstr    (i,inDateVal   )) i = i + 1
+  assert_true(stmt:bindnull   (i             )) i = i + 1
+  if PROC_SUPPORT_DEFAULT then
+    assert_true(stmt:binddefault(i           )) i = i + 1
+  end
+  assert_true(stmt:bindbool   (i,inBoolVal   )) i = i + 1
+  assert_true(stmt:bindstr    (i,inGuidVal   )) i = i + 1
 end
 
 local function BIND_CB(stmt)
-  assert_true(stmt:bindnum    (1, get_int    ))
-  assert_true(stmt:bindnum    (2, get_uint   ))
-  assert_true(stmt:bindnum    (3, get_double ))
-  assert_true(stmt:bindstr    (4, create_get_bin_by(inStringVal,10)))
-  assert_true(stmt:bindbin    (5, create_get_bin_by(inBinaryVal,10)))
-  assert_true(stmt:bindstr    (6, get_date, #inDateVal   ))
-  assert_true(stmt:bindnull   (7             ))
-  assert_true(stmt:binddefault(8             ))
-  assert_true(stmt:bindbool   (9, get_bool   ))
-  assert_true(stmt:bindstr   (10, get_uuid   ,#inGuidVal))
+  local i = 1
+  assert_true(stmt:bindnum    (i, get_int    ))                       i = i + 1
+  assert_true(stmt:bindnum    (i, get_uint   ))                       i = i + 1
+  assert_true(stmt:bindnum    (i, get_double ))                       i = i + 1
+  assert_true(stmt:bindstr    (i, create_get_bin_by(inStringVal,10))) i = i + 1
+  assert_true(stmt:bindbin    (i, create_get_bin_by(inBinaryVal,10))) i = i + 1
+  assert_true(stmt:bindstr    (i, get_date, #inDateVal   ))           i = i + 1
+  assert_true(stmt:bindnull   (i             ))                       i = i + 1
+  if PROC_SUPPORT_DEFAULT then
+    assert_true(stmt:binddefault(i             ))                     i = i + 1
+  end
+  assert_true(stmt:bindbool   (i, get_bool   ))                       i = i + 1
+  if HAS_GUID_TYPE then
+    assert_true(stmt:bindstr    (i, get_uuid   ,#inGuidVal))          i = i + 1
+  end
 end
 
 function test_1()
@@ -197,6 +234,8 @@ function test_1()
 end
 
 function test_2()
+  if DBMS == 'MySQL' then return skip'MySQL does not supported' end
+
   assert_boolean(proc_exists(cnn))
   assert(ensure_proc(cnn))
   assert_true(proc_exists(cnn))
@@ -266,36 +305,45 @@ function test_bind_value()
 
   stmt = cnn:statement()
 
-  assert_equal(vIntVal     , vIntVal     :bind_param(stmt, 1  ))
-  assert_equal(vUIntVal    , vUIntVal    :bind_param(stmt, 2  ))
-  assert_equal(vDoubleVal  , vDoubleVal  :bind_param(stmt, 3  ))
-  assert_equal(vStringVal  , vStringVal  :bind_param(stmt, 4  ))
-  assert_equal(vBinaryVal  , vBinaryVal  :bind_param(stmt, 5  ))
-  assert_equal(vDateVal    , vDateVal    :bind_param(stmt, 6, odbc.PARAM_INPUT, odbc.DATE))
-  assert_equal(vNullVal    , vNullVal    :bind_param(stmt, 7  ))
-  assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, 8  ))
-  assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, 9  ))
-  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, 10 ))
+  local i = 1
+  assert_equal(vIntVal     , vIntVal     :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vUIntVal    , vUIntVal    :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vDoubleVal  , vDoubleVal  :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vStringVal  , vStringVal  :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vBinaryVal  , vBinaryVal  :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vDateVal    , vDateVal    :bind_param(stmt, i, odbc.PARAM_INPUT, odbc.DATE)) i = i + 1
+  assert_equal(vNullVal    , vNullVal    :bind_param(stmt, i  )) i = i + 1
+  if PROC_SUPPORT_DEFAULT then
+    assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, i  )) i = i + 1
+  end
+  assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, i  )) i = i + 1
 
   EXEC_AND_ASSERT(TEST_PROC_CALL)
   VEXEC_AND_ASSERT(TEST_PROC_CALL)
 
   stmt:prepare(TEST_PROC_CALL)
-  assert_equal(vIntVal     , vIntVal     :bind_param(stmt, 1  ))
-  assert_equal(vUIntVal    , vUIntVal    :bind_param(stmt, 2  ))
-  assert_equal(vDoubleVal  , vDoubleVal  :bind_param(stmt, 3  ))
-  assert_equal(vStringVal  , vStringVal  :bind_param(stmt, 4  ))
-  assert_equal(vBinaryVal  , vBinaryVal  :bind_param(stmt, 5  ))
-  assert_equal(vDateVal    , vDateVal    :bind_param(stmt, 6, odbc.PARAM_INPUT, odbc.DATE))
-  assert_equal(vNullVal    , vNullVal    :bind_param(stmt, 7  ))
-  assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, 8  ))
-  assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, 9  ))
-  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, 10 ))
+
+  local i = 1
+  assert_equal(vIntVal     , vIntVal     :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vUIntVal    , vUIntVal    :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vDoubleVal  , vDoubleVal  :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vStringVal  , vStringVal  :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vBinaryVal  , vBinaryVal  :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vDateVal    , vDateVal    :bind_param(stmt, i, odbc.PARAM_INPUT, odbc.DATE)) i = i + 1
+  assert_equal(vNullVal    , vNullVal    :bind_param(stmt, i  )) i = i + 1
+  if PROC_SUPPORT_DEFAULT then
+    assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, i  )) i = i + 1
+  end
+  assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, i  )) i = i + 1
 
   EXEC_AND_ASSERT()
   VEXEC_AND_ASSERT()
 
   assert_true(stmt:destroy())
+end
+
 end
 
 local_run_test(arg)

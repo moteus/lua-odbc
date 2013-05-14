@@ -3,6 +3,8 @@ require "config"
 
 IS_LUA52 = _VERSION >= 'Lua 5.2'
 
+IS_WINDOWS = (require"package".config:sub(1,1) == '\\')
+
 function run_test(arg)
   local _, emsg = xpcall(function()
     lunit.main(arg)

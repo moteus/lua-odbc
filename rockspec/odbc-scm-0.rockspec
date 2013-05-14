@@ -69,6 +69,7 @@ build = {
         -- 'LODBC_USE_NULL_AS_NIL';
       };
       incdirs = {"./include","$(ODBC_INCDIR)"},
+      libdirs = {"$(ODBC_LIBDIR)"},
     };
     [ "odbc"           ] = "lua/odbc.lua";
     [ "odbc.luasql"    ] = "lua/odbc/luasql.lua";

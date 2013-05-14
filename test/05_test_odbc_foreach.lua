@@ -22,14 +22,16 @@ local TEST_ROWS = 100
 local env, cnn, stmt
 
 local function init_table()
+  local val = odbc.ulong()
   assert_boolean(table_exists(cnn))
   assert_equal(CREATE_TABLE_RETURN_VALUE, ensure_table(cnn))
   assert_true(table_exists(cnn))
   stmt = assert(cnn:statement())
   assert_true(cnn:setautocommit(false))
   assert_true(stmt:prepare("insert into " .. TEST_TABLE_NAME .. "(f1) values(?)"))
+  assert_equal(val, val:bind_param(stmt,1))
   for i = 1, TEST_ROWS do
-    assert_true(stmt:bindnum(1, i))
+    val:set(i)
     assert_equal(1, stmt:execute())
     assert_true(stmt:closed())
   end
@@ -60,6 +62,18 @@ function setup()
 end
 
 local sql = "select f1 from " .. TEST_TABLE_NAME
+
+local function count_rows()
+  if UPDATE_RETURN_ROWS then
+    return stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1')
+  end
+  local n,err = stmt:execute('select count(*) from '.. TEST_TABLE_NAME)
+  if not n then return n, err end
+  n, err = stmt:fetch()
+  stmt:close()
+  if n then return n end
+  return n, err
+end
 
 local function open_stmt(autodestroy)
   if stmt:destroyed() then stmt = cnn:statement() end
@@ -214,12 +228,12 @@ function test_stmt()
   stmt = cnn:statement()
 
   cnn:setautocommit(false)
-  assert_equal(TEST_ROWS, stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  assert_equal(TEST_ROWS, count_rows())
   assert_equal(TEST_ROWS, stmt:execute('delete from ' .. TEST_TABLE_NAME) )
   assert_equal(0,         stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
   cnn:rollback()
 
-  assert_equal(TEST_ROWS, stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
+  assert_equal(TEST_ROWS, count_rows() )
   assert_equal(TEST_ROWS, stmt:execute('delete from ' .. TEST_TABLE_NAME) )
   assert_equal(0,         stmt:execute('update ' .. TEST_TABLE_NAME .. ' set f1=f1') )
   cnn:commit()
