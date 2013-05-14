@@ -35,7 +35,7 @@ build = {
     }},
     unix = { modules = {
       [ "odbc.core"    ] = {
-        libraries = {'odbc'};
+        libraries = {'iodbc'};
       }
     }},
   },

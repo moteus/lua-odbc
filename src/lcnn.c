@@ -1651,6 +1651,15 @@ DEFINE_GET_UINT32_AS_MASK_INFO(supportsConvertFn,
   SQL_CONVERT_FUNCTIONS, SQL_FN_CVT_CONVERT
 )
 
+#if (LODBC_ODBCVER >= 0x0300) 
+#  ifndef SQL_CONVERT_GUID
+#    define SQL_CONVERT_GUID 173
+#  endif
+#  ifndef  SQL_CVT_GUID
+#    define SQL_CVT_GUID 0x01000000L
+#  endif
+#endif
+
 static int cnn_supportsConvert(lua_State *L){
   lodbc_cnn *cnn = lodbc_getcnn (L);
   SQLUINTEGER fromType = luaL_checkint(L, 2);
