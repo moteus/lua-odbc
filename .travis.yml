@@ -30,6 +30,8 @@ before_install:
 install:
   - sudo apt-get install libiodbc2 libiodbc2-dev
   - sudo luarocks make rockspec/odbc-scm-0.rockspec
+  - sudo apt-get install libsqliteodbc
+  - sudo apt-get install libmyodbc
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
   - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
   - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():datasources(print)"
