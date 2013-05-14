@@ -1,5 +1,11 @@
 IS_WINDOWS = (require"package".config:sub(1,1) == '\\')
 
+local function export(t, d)
+  d = d or _G
+  for k,v in pairs(t) do d[k] = v end
+  return d
+end
+
 DEFINITION_STRING_TYPE_NAME = 'varchar(50)'
 
 QUERYING_STRING_TYPE_NAME = 'string'
@@ -74,8 +80,22 @@ local SYBASE9 = {
     inBitVal=?,
     inGuidVal=?
   )]];
-
 }
+
+local SYBASE12 = export(SYBASE9, {}) do
+
+SYBASE12.CNN_DRV = {
+  {Driver='{SQL Anywhere 12}'};
+  {UID='DBA'};
+  {PWD='sql'};
+  {EngineName='EmptyDB'};
+  {DatabaseName='EmptyDB'};
+  {CommLinks='tcpip{host=127.0.0.1}'};
+}
+
+SYBASE12.CNN_DSN = {'emptydb', 'DBA', 'sql'}
+
+end
 
 local MSSQL = {
   DBMS = "MSSQL";
@@ -158,6 +178,15 @@ local MySQL = {
   TEST_PROC_CALL_MULTI_RS = 'CALL ' .. TEST_PROC_NAME .. '()'
 }
 
-local function export(t) for k,v in pairs(t) do _G[k] = v end end
+local VARS = {
+  mysql  = MySQL;
+  asa9   = SYBASE9;
+  asa12  = SYBASE12;
+  mssql  = MSSQL;
+}
 
-export(MySQL)
+local v = (require"os".getenv("LUAODBC_TEST_DBMS") or 'asa9'):lower()
+
+export(
+  (assert(VARS[v], 'unknown DBMS: ' .. v))
+)
