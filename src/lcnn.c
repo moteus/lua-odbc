@@ -10,6 +10,16 @@
 
 LODBC_EXPORT const char *LODBC_CNN = LODBC_PREFIX "Connection";
 
+// iODBC does not define this constants
+#if (LODBC_ODBCVER >= 0x0300)
+# ifndef SQL_CONVERT_GUID
+#   define SQL_CONVERT_GUID 173
+# endif
+# ifndef SQL_CVT_GUID
+#   define SQL_CVT_GUID 0x01000000L
+# endif
+#endif
+
 //{ declarations
 static int cnn_supportsTransactions(lua_State *L);
 //}
