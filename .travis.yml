@@ -28,7 +28,9 @@ before_install:
   - mysql --version
 
 install:
-  - sudo apt-get install iodbc iodbc-dev
+  - sudo apt-get install iodbc
+  - sudo apt-get install libiodbc2 libiodbc2-dev
+  - sudo apt-get install libsqliteodbc
   - sudo luarocks make rockspec/odbc-scm-0.rockspec
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
   - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
