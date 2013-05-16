@@ -1,5 +1,5 @@
 package = "odbc"
-version = "0.1.0-1"
+version = "0.1.0-2"
 source = {
   url = "https://github.com/moteus/lua-odbc/archive/v0.1.0.zip",
   dir = "lua-odbc-0.1.0",
@@ -69,6 +69,7 @@ build = {
         -- 'LODBC_USE_NULL_AS_NIL';
       };
       incdirs = {"./include","$(ODBC_INCDIR)"},
+      libdirs = {"$(ODBC_LIBDIR)"},
     };
     [ "odbc"           ] = "lua/odbc.lua";
     [ "odbc.luasql"    ] = "lua/odbc/luasql.lua";
