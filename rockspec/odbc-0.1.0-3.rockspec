@@ -1,8 +1,8 @@
 package = "odbc"
-version = "scm-0"
+version = "0.1.0-3"
 source = {
-  url = "https://github.com/moteus/lua-odbc/archive/master.zip",
-  dir = "lua-odbc-master",
+  url = "https://github.com/moteus/lua-odbc/archive/v0.1.0.zip",
+  dir = "lua-odbc-0.1.0",
 }
 
 description = {
