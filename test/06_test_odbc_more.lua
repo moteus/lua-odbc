@@ -68,6 +68,13 @@ function FETCH_AND_ASSERT(cur)
     assert_true(cur:close())
     return
   end
+
+  local res = cur:nextresultset()
+  if res == false then
+    assert_true(cur:close())
+    return;
+  end
+  assert_false(cur:nextresultset())
   assert_true(cur:close())
   skip("FIXME :MySQL nextresultset return one more reusltset")
 end
@@ -84,12 +91,20 @@ begin
 end
 ]]
 
-function test_1()
+function test_exec()
   stmt = assert(cnn:statement())
   if TEST_PROC_CREATE_MULTI_RS then
     sql = assert(TEST_PROC_CALL_MULTI_RS)
   end
   FETCH_AND_ASSERT( assert(stmt:execute(sql)) )
+  stmt:destroy()
+end
+
+function test_prepared()
+  stmt = assert(cnn:statement())
+  if TEST_PROC_CREATE_MULTI_RS then
+    sql = assert(TEST_PROC_CALL_MULTI_RS)
+  end
   assert_true(stmt:prepare(sql))
   FETCH_AND_ASSERT( assert(stmt:execute()) )
   stmt:destroy()
