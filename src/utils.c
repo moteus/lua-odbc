@@ -2,6 +2,7 @@
 #include "lualib.h"
 #include "lerr.h"
 #include "l52util.h"
+#include "luaodbc.h"
 
 const char 
   *LT_STRING  = "string",
