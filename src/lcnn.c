@@ -1,4 +1,3 @@
-#include "lodbc.h"
 #include "utils.h"
 #include "l52util.h"
 #include "lcnn.h"
@@ -7,8 +6,10 @@
 #include "lerr.h"
 #include "libopt.h"
 #include "driverinfo.h"
+#include "lodbc.h"
+#include "luaodbc.h"
 
-LODBC_EXPORT const char *LODBC_CNN = LODBC_PREFIX "Connection";
+const char *LODBC_CNN = LODBC_PREFIX "Connection";
 
 // iODBC does not define this constants
 #if (LODBC_ODBCVER >= 0x0300)

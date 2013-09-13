@@ -3,7 +3,7 @@
 
 #include "lodbc.h"
 
-extern const char 
+LODBC_INTERNAL extern const char 
   *LT_STRING,
   *LT_NUMBER,
   *LT_BOOLEAN,
@@ -17,22 +17,22 @@ extern const char
 
 #define lodbc_iserror(a) (!SQL_SUCCEEDED((a)))
 
-int lodbc_is_fail(lua_State *L, int nresult);
+LODBC_INTERNAL int lodbc_is_fail(lua_State *L, int nresult);
 
 // no result or error
-int lodbc_is_unknown(lua_State *L, int nresult);
+LODBC_INTERNAL int lodbc_is_unknown(lua_State *L, int nresult);
 
 /*
 ** Check if is SQL type.
 */
-int lodbc_issqltype (const SQLSMALLINT type);
+LODBC_INTERNAL int lodbc_issqltype (const SQLSMALLINT type);
 
 /*
 ** Returns the name of an equivalent lua type for a SQL type.
 */
-const char *lodbc_sqltypetolua (const SQLSMALLINT type);
+LODBC_INTERNAL const char *lodbc_sqltypetolua (const SQLSMALLINT type);
 
-int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const char type);
+LODBC_INTERNAL int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const char type);
 
 /*
 ** Retrieves data from the i_th column in the current row
@@ -43,30 +43,30 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
 ** Returns:
 **   0 if successfull, non-zero otherwise;
 */
-int lodbc_push_column(lua_State *L, int coltypes, const SQLHSTMT hstmt, SQLUSMALLINT i);
+LODBC_INTERNAL int lodbc_push_column(lua_State *L, int coltypes, const SQLHSTMT hstmt, SQLUSMALLINT i);
 
-int lodbc_get_uint_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, SQLINTEGER optnum);
+LODBC_INTERNAL int lodbc_get_uint_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, SQLINTEGER optnum);
 
-int lodbc_get_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, SQLINTEGER optnum);
+LODBC_INTERNAL int lodbc_get_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, SQLINTEGER optnum);
 
-int lodbc_set_uint_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, 
+LODBC_INTERNAL int lodbc_set_uint_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, 
     SQLINTEGER optnum, SQLUINTEGER value);
 
-int lodbc_set_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, 
+LODBC_INTERNAL int lodbc_set_str_attr_(lua_State*L, SQLSMALLINT HandleType, SQLHANDLE Handle, 
     SQLINTEGER optnum, const char* value, size_t len);
 
-int lodbc_iscallable(lua_State*L, int idx);
+LODBC_INTERNAL int lodbc_iscallable(lua_State*L, int idx);
 
-void lodbc_pushnull(lua_State*L);
+LODBC_INTERNAL void lodbc_pushnull(lua_State*L);
 
-int lodbc_isnull(lua_State*L, int idx);
+LODBC_INTERNAL int lodbc_isnull(lua_State*L, int idx);
 
-void lodbc_init_user_value(lua_State*L);
+LODBC_INTERNAL void lodbc_init_user_value(lua_State*L);
 
-void lodbc_get_user_value(lua_State*L, int keyindex);
+LODBC_INTERNAL void lodbc_get_user_value(lua_State*L, int keyindex);
 
-void lodbc_set_user_value(lua_State*L, int keyindex);
+LODBC_INTERNAL void lodbc_set_user_value(lua_State*L, int keyindex);
 
-int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE handle, const char** states, int n);
+LODBC_INTERNAL int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE handle, const char** states, int n);
 
 #endif

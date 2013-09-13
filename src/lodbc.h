@@ -21,6 +21,11 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#ifndef LODBC_INTERNAL
+//! @todo implement
+#  define LODBC_INTERNAL
+#endif
+
 #ifndef LODBC_MIN_PAR_BUFSIZE 
 #  define LODBC_MIN_PAR_BUFSIZE 64
 #endif

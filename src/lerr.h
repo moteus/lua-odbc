@@ -11,18 +11,18 @@
 #  define lodbc_faildirect lodbc_faildirect_str
 #endif
 
-int lodbc_pass(lua_State *L);
+LODBC_INTERNAL int lodbc_pass(lua_State *L);
 
-int lodbc_fail_str(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle);
+LODBC_INTERNAL int lodbc_fail_str(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle);
 
-int lodbc_fail_obj(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle);
+LODBC_INTERNAL int lodbc_fail_obj(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle);
 
-int lodbc_faildirect_obj(lua_State *L, const char *err);
+LODBC_INTERNAL int lodbc_faildirect_obj(lua_State *L, const char *err);
 
-int lodbc_faildirect_str(lua_State *L, const char *err);
+LODBC_INTERNAL int lodbc_faildirect_str(lua_State *L, const char *err);
 
 #define LODBC_ALLOCATE_ERROR(L) luaL_error((L), LODBC_PREFIX"memory allocation error.")
 
-void lodbc_err_initlib (lua_State *L, int nup);
+LODBC_INTERNAL void lodbc_err_initlib (lua_State *L, int nup);
 
 #endif

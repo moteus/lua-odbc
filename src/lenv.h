@@ -9,11 +9,11 @@ typedef struct lodbc_env{
   int      conn_counter;
 } lodbc_env;
 
-lodbc_env *lodbc_getenv_at (lua_State *L, int i);
+LODBC_INTERNAL lodbc_env *lodbc_getenv_at (lua_State *L, int i);
 #define lodbc_getenv(L) lodbc_getenv_at((L),1)
 
-void lodbc_env_initlib (lua_State *L, int nup);
+LODBC_INTERNAL void lodbc_env_initlib (lua_State *L, int nup);
 
-int lodbc_environment_create(lua_State *L, SQLHENV henv, uchar own);
+LODBC_INTERNAL int lodbc_environment_create(lua_State *L, SQLHENV henv, uchar own);
 
 #endif 

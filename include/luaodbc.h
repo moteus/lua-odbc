@@ -5,25 +5,27 @@
 #ifndef _LUAODBC_H_25621A6F_D9AD_47EB_85DB_06AD52493CD7_
 #define _LUAODBC_H_25621A6F_D9AD_47EB_85DB_06AD52493CD7_
 
-#ifdef _MSC_VER
-#  ifdef LUAODBC_EXPORTS
-#    define LODBC_EXPORT __declspec(dllexport)
+#ifndef LODBC_EXPORT
+#  if defined(_WIN32)
+#    ifdef LUAODBC_EXPORTS
+#      define LODBC_EXPORT __declspec(dllexport) extern
+#    else
+#      define LODBC_EXPORT __declspec(dllimport) extern
+#    endif
 #  else
-#    define LODBC_EXPORT __declspec(dllimport)
+#    define LODBC_EXPORT extern
 #  endif
-#else
-#  define LODBC_EXPORT
 #endif
 
 typedef int (*lodbc_free_fn) (lua_State *, SQLHANDLE, void *);
 
-LODBC_EXPORT extern const char *LODBC_ENV;
-LODBC_EXPORT extern const char *LODBC_CNN;
-LODBC_EXPORT extern const char *LODBC_STMT;
+LODBC_EXPORT const char *LODBC_ENV;
+LODBC_EXPORT const char *LODBC_CNN;
+LODBC_EXPORT const char *LODBC_STMT;
 
 #ifndef LODBC_USE_NULL_AS_NIL
 
-LODBC_EXPORT extern const int  *LODBC_NULL;
+LODBC_EXPORT const int  *LODBC_NULL;
 
 #endif
 

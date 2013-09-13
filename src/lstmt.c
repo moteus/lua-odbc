@@ -1,4 +1,3 @@
-#include "lodbc.h"
 #include "utils.h"
 #include "l52util.h"
 #include "lstmt.h"
@@ -6,8 +5,10 @@
 #include "lerr.h"
 #include "parlist.h"
 #include "libopt.h"
+#include "lodbc.h"
+#include "luaodbc.h"
 
-LODBC_EXPORT const char *LODBC_STMT = LODBC_PREFIX "Statement";
+const char *LODBC_STMT = LODBC_PREFIX "Statement";
 
 static const char *CLOSE_CURSOR_STATES[] = {
   "24000", // Invalid cursor state.

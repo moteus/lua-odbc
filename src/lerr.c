@@ -10,7 +10,6 @@ int lodbc_pass(lua_State *L){
   return 1;
 }
 
-
 int lodbc_push_diagnostics_obj(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle){
   SQLCHAR State[6];
   SQLINTEGER NativeError;

@@ -1,7 +1,6 @@
 #ifndef _LCNN_H_5007C764_4F0B_4BC0_BE65_4BC8AD9AC0F9_
 #define _LCNN_H_5007C764_4F0B_4BC0_BE65_4BC8AD9AC0F9_
 
-#include "luaodbc.h"
 #include "lodbc.h"
 
 typedef struct lodbc_env lodbc_env;
@@ -37,15 +36,15 @@ typedef struct lodbc_cnn{
   int       stmt_ref; // list for autoclose statements
 } lodbc_cnn;
 
-lodbc_cnn *lodbc_getcnn_at (lua_State *L, int i);
+LODBC_INTERNAL lodbc_cnn *lodbc_getcnn_at (lua_State *L, int i);
 #define lodbc_getcnn(L) lodbc_getcnn_at((L),1)
 
-void lodbc_cnn_initlib (lua_State *L, int nup);
+LODBC_INTERNAL void lodbc_cnn_initlib (lua_State *L, int nup);
 
 // hdbc - валидный описатель
 // env - кто распределил (opt)
 // env_idx - индекс объекта env на стеке (opt)
 // own - true - передается право владения(объект ответственен за закрытие описателя)
-int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_idx, uchar own);
+LODBC_INTERNAL int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_idx, uchar own);
 
 #endif 

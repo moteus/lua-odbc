@@ -35,7 +35,6 @@ static int optpartype(lua_State *L, int idx){
   return par_type;
 }
 
-
 #define lodbc_value_at(L, T, I) (T *)lodbc_value_at_impl(L, T##_NAME, I)
 #define lodbc_value(L, T) lodbc_value_at(L, T, 1)
 #define create_meta(L, T) lutil_createmetap(L, T##_NAME, T##_methods, 0)

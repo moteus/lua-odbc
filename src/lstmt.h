@@ -20,11 +20,11 @@ typedef struct lodbc_stmt{
   SQLRETURN last_exec_ret;
 } lodbc_stmt;
 
-lodbc_stmt *lodbc_getstmt_at (lua_State *L, int i);
+LODBC_INTERNAL lodbc_stmt *lodbc_getstmt_at (lua_State *L, int i);
 #define lodbc_getstmt(L) lodbc_getstmt_at((L),1)
 
-void lodbc_stmt_initlib (lua_State *L, int nup);
+LODBC_INTERNAL void lodbc_stmt_initlib (lua_State *L, int nup);
 
-int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, lodbc_cnn *cnn, int cnn_idx, uchar own, int ncols, uchar opened);
+LODBC_INTERNAL int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, lodbc_cnn *cnn, int cnn_idx, uchar own, int ncols, uchar opened);
 
-#endif 
+#endif

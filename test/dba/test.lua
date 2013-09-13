@@ -6,9 +6,9 @@ print("")
 local HAS_RUNNER = not not lunit
 local IS_WINDOWS = (require"package".config:sub(1,1) == '\\')
 
-function prequire(...)
+local function prequire(...)
   local ok, mod = pcall(require, ...)
-  if not ok then return mod, ... end
+  if ok then return mod, ... end
   return nil, mod
 end
 

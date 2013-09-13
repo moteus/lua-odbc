@@ -6,7 +6,7 @@
 #include "lerr.h"
 #include "luaodbc.h"
 
-LODBC_EXPORT const char *LODBC_ENV = LODBC_PREFIX "Environment";
+const char *LODBC_ENV = LODBC_PREFIX "Environment";
 
 static int env_get_uint_attr_(lua_State*L, lodbc_env *env, SQLINTEGER optnum);
 
