@@ -33,7 +33,7 @@ typedef struct lodbc_cnn{
   lodbc_env *env;
   int       env_ref;
 
-  int       stmt_ref; // list for autoclose statements
+  int       stmt_list_ref; // list for autoclose statements
 } lodbc_cnn;
 
 LODBC_INTERNAL lodbc_cnn *lodbc_getcnn_at (lua_State *L, int i);

@@ -87,13 +87,7 @@ lodbc_cnn *lodbc_getcnn_at (lua_State *L, int i) {
 //{ ctor/dtor
 
 static int create_stmt_list(lua_State *L){
-  int top = lua_gettop(L);
-  lua_newtable(L);
-  lua_newtable(L);
-  lua_pushliteral(L, "k");
-  lua_setfield(L, -2, "__mode");
-  lua_setmetatable(L,-2);
-  assert((top+1) == lua_gettop(L));
+  lodbc_make_weak_table(L, "k");
   return luaL_ref(L, LODBC_LUA_REGISTRY);
 }
 
@@ -107,15 +101,22 @@ int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_
   if(env){
     cnn->env    = env;
     env->conn_counter++;
+    if(env->conn_list_ref != LUA_NOREF){
+      lua_rawgeti(L, LODBC_LUA_REGISTRY, env->conn_list_ref);
+      lua_pushvalue(L, -2);
+      lua_pushboolean(L, 1);
+      lua_rawset(L, -3);
+      lua_pop(L,1);
+    }
   }
   cnn->env_ref = LUA_NOREF;
   if(env_idx){
     lua_pushvalue(L, env_idx);
     cnn->env_ref = luaL_ref(L, LODBC_LUA_REGISTRY);
   }
-  cnn->stmt_ref = LUA_NOREF;
+  cnn->stmt_list_ref = LUA_NOREF;
   if(LODBC_OPT_INT(CNN_AUTOCLOSESTMT)){
-    cnn->stmt_ref = create_stmt_list(L);
+    cnn->stmt_list_ref = create_stmt_list(L);
   }
   return 1;
 }
@@ -135,8 +136,8 @@ static int cnn_destroy (lua_State *L) {
   luaL_argcheck (L, cnn != NULL, 1, LODBC_PREFIX "connection expected");
 
   if(!(cnn->flags & LODBC_FLAG_DESTROYED)){
-    if(LUA_NOREF != cnn->stmt_ref){
-      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
+    if(LUA_NOREF != cnn->stmt_list_ref){
+      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_list_ref);
       assert(lua_istable(L, -1));
       lua_pushnil(L);
       while(lua_next(L, -2)){
@@ -166,12 +167,19 @@ static int cnn_destroy (lua_State *L) {
     if(cnn->env){
       cnn->env->conn_counter--;
       assert(cnn->env->conn_counter >= 0);
+      if(cnn->env->conn_list_ref != LUA_NOREF){
+        lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->env->conn_list_ref);
+        lua_pushvalue(L, -2);
+        lua_pushnil(L);
+        lua_rawset(L, -3);
+        lua_pop(L,1);
+      }
     }
     luaL_unref(L, LODBC_LUA_REGISTRY, cnn->env_ref);
     cnn->env_ref = LUA_NOREF;
 
-    luaL_unref(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
-    cnn->stmt_ref = LUA_NOREF;
+    luaL_unref(L, LODBC_LUA_REGISTRY, cnn->stmt_list_ref);
+    cnn->stmt_list_ref = LUA_NOREF;
 
     cnn->flags |= LODBC_FLAG_DESTROYED;
   }
@@ -742,14 +750,14 @@ static int cnn_setautoclosestmt(lua_State *L){
   lodbc_cnn *cnn = lodbc_getcnn (L);
   int val = lua_toboolean(L, 2);
 
-  if(val && (cnn->stmt_ref == LUA_NOREF)){
-    cnn->stmt_ref = create_stmt_list(L);
+  if(val && (cnn->stmt_list_ref == LUA_NOREF)){
+    cnn->stmt_list_ref = create_stmt_list(L);
     return lodbc_pass(L);
   }
 
-  if((!val) && (cnn->stmt_ref != LUA_NOREF)){
-    luaL_unref(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
-    cnn->stmt_ref = LUA_NOREF;
+  if((!val) && (cnn->stmt_list_ref != LUA_NOREF)){
+    luaL_unref(L, LODBC_LUA_REGISTRY, cnn->stmt_list_ref);
+    cnn->stmt_list_ref = LUA_NOREF;
     return lodbc_pass(L);
   }
 
@@ -758,7 +766,7 @@ static int cnn_setautoclosestmt(lua_State *L){
 
 static int cnn_getautoclosestmt(lua_State *L){
   lodbc_cnn *cnn = lodbc_getcnn (L);
-  lua_pushboolean(L, (cnn->stmt_ref == LUA_NOREF)?0:1);
+  lua_pushboolean(L, (cnn->stmt_list_ref == LUA_NOREF)?0:1);
   return 1;
 }
 

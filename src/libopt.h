@@ -8,6 +8,7 @@
 // options ids
 #define LODBC_OPT_STMT_DESTROYONCLOSE 1
 #define LODBC_OPT_CNN_AUTOCLOSESTMT   2
+#define LODBC_OPT_ENV_AUTOCLOSECNN    3
 
 LODBC_INTERNAL int lodbc_opt_get_int(int optid);
 

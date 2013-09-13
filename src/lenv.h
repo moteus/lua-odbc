@@ -7,6 +7,7 @@ typedef struct lodbc_env{
   uchar    flags;
   SQLHENV  handle;
   int      conn_counter;
+  int      conn_list_ref;
 } lodbc_env;
 
 LODBC_INTERNAL lodbc_env *lodbc_getenv_at (lua_State *L, int i);

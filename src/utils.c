@@ -478,3 +478,14 @@ int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE handle, const char*
     i++;
   }
 }
+
+int lodbc_make_weak_table(lua_State*L, const char *mode){
+  int top = lua_gettop(L);
+  lua_newtable(L);
+  lua_newtable(L);
+  lua_pushstring(L, mode);
+  lua_setfield(L, -2, "__mode");
+  lua_setmetatable(L,-2);
+  assert((top+1) == lua_gettop(L));
+  return 1;
+}

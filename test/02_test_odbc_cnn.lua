@@ -75,4 +75,22 @@ function test_uservalue()
   assert_nil(ptr.value)
 end
 
+function test_weak()
+  local function test()
+    local ptr
+    do 
+      local cnn = env:connection()
+      ptr = weak_ptr(cnn)
+    end
+    gc_collect()
+    if ptr.value then cnn = ptr.value end -- for destroy in teardown
+    assert_nil(ptr.value)
+  end
+
+  assert_true(env:setautoclosecnn(false))
+  test()
+  assert_true(env:setautoclosecnn(true))
+  test()
+end
+
 local_run_test(arg)

@@ -51,8 +51,8 @@ int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, lodbc_cnn *cnn, int cn
   if(cnn){
     stmt->cnn = cnn;
     cnn->stmt_counter++;
-    if(cnn->stmt_ref != LUA_NOREF){
-      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_ref);
+    if(cnn->stmt_list_ref != LUA_NOREF){
+      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_list_ref);
       lua_pushvalue(L, -2);
       lua_pushboolean(L, 1);
       lua_rawset(L, -3);
@@ -112,8 +112,8 @@ static int stmt_destroy (lua_State *L) {
     if(stmt->cnn){
       stmt->cnn->stmt_counter--;
       assert(stmt->cnn->stmt_counter >= 0);
-      if(stmt->cnn->stmt_ref != LUA_NOREF){
-        lua_rawgeti(L, LODBC_LUA_REGISTRY, stmt->cnn->stmt_ref);
+      if(stmt->cnn->stmt_list_ref != LUA_NOREF){
+        lua_rawgeti(L, LODBC_LUA_REGISTRY, stmt->cnn->stmt_list_ref);
         lua_pushvalue(L, -2);
         lua_pushnil(L);
         lua_rawset(L, -3);

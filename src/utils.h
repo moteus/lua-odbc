@@ -69,4 +69,6 @@ LODBC_INTERNAL void lodbc_set_user_value(lua_State*L, int keyindex);
 
 LODBC_INTERNAL int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE handle, const char** states, int n);
 
+LODBC_INTERNAL int lodbc_make_weak_table(lua_State*L, const char *mode);
+
 #endif
