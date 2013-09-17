@@ -35,11 +35,11 @@ static int create_cnn_list(lua_State *L){
 static void call_cnn_destroy(lua_State *L){
   int top = lua_gettop(L);
   assert(lutil_checkudatap(L, -1, LODBC_CNN));
-  lua_getfield(L, -1, "destroy");
-  assert(lua_isfunction(L, -1));
-  lua_pushvalue(L, -2);
-  lua_pcall(L,1,0,0);
-  assert(lua_gettop(L) == top);
+
+  lua_pushvalue(L, -1);
+  lodbc_pcall_method(L, "destroy", 0, 0, 0);
+
+  lua_settop(L, top); // ignore any error
 }
 
 int lodbc_environment_create(lua_State *L, SQLHENV henv, uchar own){

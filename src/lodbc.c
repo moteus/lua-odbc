@@ -8,6 +8,12 @@
 #include "luaodbc.h"
 #include "utils.h"
 
+LODBC_EXPORT void lodbc_version(int *major, int *minor, int *patch){
+  if(major) *major = LODBC_VERSION_MAJOR;
+  if(minor) *minor = LODBC_VERSION_MINOR;
+  if(patch) *patch = LODBC_VERSION_PATCH;
+}
+
 LODBC_EXPORT unsigned int lodbc_odbcver(){
   return LODBC_ODBCVER;
 }
@@ -22,6 +28,36 @@ LODBC_EXPORT int lodbc_connection(lua_State *L, SQLHDBC hdbc,  unsigned char own
 
 LODBC_EXPORT int lodbc_statement(lua_State *L, SQLHSTMT hstmt, unsigned char own){
   return lodbc_statement_create(L,hstmt, NULL, 0, own, 0, 0);
+}
+
+static int lodbc_version_(lua_State *L){
+  lua_pushnumber(L, LODBC_VERSION_MAJOR);
+  lua_pushnumber(L, LODBC_VERSION_MINOR);
+  lua_pushnumber(L, LODBC_VERSION_PATCH);
+#ifdef LODBC_VERSION_COMMENT
+  if(LODBC_VERSION_COMMENT[0]){
+    lua_pushliteral(L, LODBC_VERSION_COMMENT);
+    return 4;
+  }
+#endif
+  return 3;
+}
+
+static int lodbc_push_version(lua_State *L){
+  lua_pushnumber(L, LODBC_VERSION_MAJOR);
+  lua_pushliteral(L, ".");
+  lua_pushnumber(L, LODBC_VERSION_MINOR);
+  lua_pushliteral(L, ".");
+  lua_pushnumber(L, LODBC_VERSION_PATCH);
+#ifdef LODBC_VERSION_COMMENT
+  if(LODBC_VERSION_COMMENT[0]){
+    lua_pushliteral(L, "-"LODBC_VERSION_COMMENT);
+    lua_concat(L, 6);
+  }
+  else
+#endif
+  lua_concat(L, 5);
+  return 1;
 }
 
 static int lodbc_environment_(lua_State *L){
@@ -44,6 +80,7 @@ static int lodbc_getstmtmeta(lua_State *L){
 }
 
 static const struct luaL_Reg lodbc_func[]   = {
+  { "version",      lodbc_version_        },
   { "environment",  lodbc_environment_    },
 
   { "getenvmeta",   lodbc_getenvmeta   },
@@ -55,8 +92,13 @@ static const struct luaL_Reg lodbc_func[]   = {
 
 static void lodbc_init_lib(lua_State *L, int nup){
   lua_newtable(L);
+
   lua_pushliteral(L, "NULL");
   lodbc_pushnull(L);
+  lua_rawset(L, -3);
+
+  lua_pushliteral(L, "_VERSION");
+  lodbc_push_version(L);
   lua_rawset(L, -3);
 
   lua_newtable(L); // registry

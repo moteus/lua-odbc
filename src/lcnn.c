@@ -124,11 +124,11 @@ int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_
 static void call_stmt_destroy(lua_State *L){
   int top = lua_gettop(L);
   assert(lutil_checkudatap(L, -1, LODBC_STMT));
-  lua_getfield(L, -1, "destroy");
-  assert(lua_isfunction(L, -1));
-  lua_pushvalue(L, -2);
-  lua_pcall(L,1,0,0);
-  assert(lua_gettop(L) == top);
+
+  lua_pushvalue(L, -1);
+  lodbc_pcall_method(L, "destroy", 0, 0, 0);
+
+  lua_settop(L, top); // ignore any error
 }
 
 static int cnn_destroy (lua_State *L) {

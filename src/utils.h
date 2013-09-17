@@ -71,4 +71,6 @@ LODBC_INTERNAL int lodbc_test_state(const SQLSMALLINT type, const SQLHANDLE hand
 
 LODBC_INTERNAL int lodbc_make_weak_table(lua_State*L, const char *mode);
 
+LODBC_INTERNAL int lodbc_pcall_method(lua_State *L, const char *name, int nargs, int nresults, int errfunc);
+
 #endif

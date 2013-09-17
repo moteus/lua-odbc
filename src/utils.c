@@ -489,3 +489,10 @@ int lodbc_make_weak_table(lua_State*L, const char *mode){
   assert((top+1) == lua_gettop(L));
   return 1;
 }
+
+int lodbc_pcall_method(lua_State *L, const char *name, int nargs, int nresults, int errfunc){
+  int obj_index = nargs - 1;
+  lua_getfield(L, obj_index, name);
+  lua_insert(L, obj_index - 1);
+  return lua_pcall(L, nargs + 1, nresults, errfunc);
+}
