@@ -37,8 +37,10 @@ function do_connect()
   local err
   env,err = odbc.environment()
   if env then
+    env:setautoclosecnn(false)
     cnn,err = env:connection()
     if cnn then
+      cnn:setautoclosestmt(false)
       local ok ok, err = cnn:driverconnect(CNN_DRV)
       if ok then return env, cnn end
     end

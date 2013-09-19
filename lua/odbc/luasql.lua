@@ -49,6 +49,7 @@ local Environment_new, Connection_new, Cursor_new
 function Environment_new()
   local env, err = odbc.environment()
   if not env then return nil, err end
+  env:setautoclosecnn(false)
   return setmetatable({private_={env = env}}, Environment)
 end
 
@@ -62,6 +63,7 @@ end
 function Environment:connect(...)
   local cnn, err = self.private_.env:connection()
   if not cnn then return nil, err end
+  cnn:setautoclosestmt(false)
   local ok ok, err = cnn:connect(...)
   if not ok then cnn:destroy() return nil, err end
   return Connection_new(cnn, self)

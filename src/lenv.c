@@ -60,7 +60,11 @@ int lodbc_environment_create(lua_State *L, SQLHENV henv, uchar own){
 
   env->conn_list_ref = LUA_NOREF;
   if(LODBC_OPT_INT(ENV_AUTOCLOSECNN)){
-    env->conn_list_ref = create_cnn_list(L);
+    int top = lua_gettop(L);
+    lua_pushvalue(L, -1);
+    lua_pushboolean(L, 1);
+    lodbc_pcall_method(L, "setautoclosecnn", 1, 0, 0);
+    lua_settop(L, top);
   }
 
   if(is_new){

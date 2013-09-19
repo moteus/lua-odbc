@@ -116,7 +116,11 @@ int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_
   }
   cnn->stmt_list_ref = LUA_NOREF;
   if(LODBC_OPT_INT(CNN_AUTOCLOSESTMT)){
-    cnn->stmt_list_ref = create_stmt_list(L);
+    int top = lua_gettop(L);
+    lua_pushvalue(L, -1);
+    lua_pushboolean(L, 1);
+    lodbc_pcall_method(L, "setautoclosestmt", 1, 0, 0);
+    lua_settop(L, top);
   }
   return 1;
 }
