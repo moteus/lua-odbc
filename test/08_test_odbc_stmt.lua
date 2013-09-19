@@ -76,4 +76,25 @@ function test_uservalue()
   assert_nil(ptr.value)
 end
 
+function test_statement_counter()
+  local function test()
+    assert_equal(1, cnn:statement_count())
+    local stmt2 = assert_not_nil(cnn:statement())
+    local n, err = cnn:statement_count()
+    stmt2:destroy()
+    assert_equal(2, n, err)
+    assert_equal(1, cnn:statement_count())
+    stmt:destroy()
+    assert_equal(0, cnn:statement_count())
+  end
+
+  cnn:setautoclosestmt(false)
+  stmt = cnn:statement()
+  test()
+
+  cnn:setautoclosestmt(true)
+  stmt = cnn:statement()
+  test()
+end
+
 local_run_test(arg)

@@ -375,6 +375,12 @@ static int env_setuservalue(lua_State *L){
   return 1;
 }
 
+static int env_connection_count(lua_State *L){
+  lodbc_env *env = lodbc_getenv(L);
+  lua_pushnumber(L, env->conn_counter);
+  return 1;
+}
+
 static const struct luaL_Reg lodbc_env_methods[] = {
   {"__gc",       env_destroy},
   {"destroy",    env_destroy},
@@ -395,6 +401,8 @@ static const struct luaL_Reg lodbc_env_methods[] = {
 
   {"setautoclosecnn",  env_setautoclosecnn},
   {"getautoclosecnn",  env_getautoclosecnn},
+
+  {"connection_count", env_connection_count},
 
   {NULL, NULL},
 };

@@ -229,6 +229,12 @@ static int cnn_setuservalue(lua_State *L){
   return 1;
 }
 
+static int cnn_statement_count(lua_State *L){
+  lodbc_cnn *cnn = lodbc_getcnn(L);
+  lua_pushnumber(L, cnn->stmt_counter);
+  return 1;
+}
+
 //{ connect
 
 static int conn_after_connect(lua_State *L){
@@ -2250,6 +2256,8 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
 
   {"getuservalue",  cnn_getuservalue},
   {"setuservalue",  cnn_setuservalue},
+
+  {"statement_count",        cnn_statement_count},
 
   {"supportsPrepare",        cnn_has_prepare},
   {"supportsBindParam",      cnn_has_bindparam},

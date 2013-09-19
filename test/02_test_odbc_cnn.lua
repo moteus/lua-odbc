@@ -87,9 +87,33 @@ function test_weak()
     assert_nil(ptr.value)
   end
 
+  cnn:destroy()
+
   assert_true(env:setautoclosecnn(false))
   test()
   assert_true(env:setautoclosecnn(true))
+  test()
+end
+
+function test_connection_counter()
+  local function test()
+    assert_equal(1, env:connection_count())
+    local cnn2 = assert_not_nil(env:connection())
+    local n, err = env:connection_count()
+    cnn2:destroy()
+    assert_equal(2, n, err)
+    assert_equal(1, env:connection_count())
+    cnn:destroy()
+    assert_equal(0, env:connection_count())
+  end
+
+  cnn:destroy()
+  env:setautoclosecnn(false)
+  cnn = assert_not_nil(env:connection())
+  test()
+
+  env:setautoclosecnn(true)
+  cnn = assert_not_nil(env:connection())
   test()
 end
 
