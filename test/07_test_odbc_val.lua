@@ -15,8 +15,8 @@ end
 
 local types = {
   'ubigint', 'sbigint', 'utinyint', 'stinyint', 'ushort', 'sshort', 
-  'ulong', 'slong', 'float', 'double', 'date', 'time', 'bit',
-  'char', 'binary', 'wchar'
+  'ulong', 'slong', 'float', 'double', 'date', 'time', 'timestamp',
+  'bit', 'char', 'binary', 'wchar'
 }
 
 local tsize = {
@@ -70,6 +70,42 @@ function test_buf()
     val:set(("\0"):rep(2*val:size()))
     assert_equal(val:size(), val:length())
   end
+end
+
+function test_date()
+  val = assert_not_nil(odbc.date())
+  assert_true(val:is_null())
+  val:set("1995-05-08")
+  assert_false(val:is_null())
+  assert_equal("1995-05-08", val:get())
+  val:set("1999a-08-a08")
+  assert_equal("1995-05-08", val:get())
+  val:set("1999-8-7")
+  assert_equal("1999-08-07", val:get())
+end
+
+function test_time()
+  val = assert_not_nil(odbc.time())
+  assert_true(val:is_null())
+  val:set("5:8:9")
+  assert_false(val:is_null())
+  assert_equal("05:08:09", val:get())
+  val:set("aa:bb:cc")
+  assert_equal("05:08:09", val:get())
+  val:set("06:07:08")
+  assert_equal("06:07:08", val:get())
+end
+
+function test_timestamp()
+  val = assert_not_nil(odbc.timestamp())
+  assert_true(val:is_null())
+  val:set("1995-2-01 5:8:9.123")
+  assert_false(val:is_null())
+  assert_equal("1995-02-01 05:08:09.123", val:get())
+  val:set("1995-2-01 5:8:9.0")
+  assert_equal("1995-02-01 05:08:09", val:get())
+  val:set("1995-3-02 7:9:5")
+  assert_equal("1995-03-02 07:09:05", val:get())
 end
 
 local _ENV = TEST_CASE'Select into value test'
@@ -137,5 +173,6 @@ function test_overflow()
   assert_equal(subBin, binVal:get())
   assert_equal(subStr, strVal:get())
 end
+
 
 local_run_test(arg)

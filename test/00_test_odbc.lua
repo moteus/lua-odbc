@@ -11,8 +11,8 @@ local _ENV = TEST_CASE'Library test'
 
 local odbc_types = {
   'ubigint', 'sbigint', 'utinyint', 'stinyint', 'ushort', 'sshort', 
-  'ulong', 'slong', 'float', 'double', 'date', 'time', 'bit',
-  'char', 'binary', 'wchar'
+  'ulong', 'slong', 'float', 'double', 'date', 'time', 'timestamp',
+  'bit', 'char', 'binary', 'wchar'
 }
 
 function teardown()
@@ -217,7 +217,6 @@ function test_statement_interface()
     assert_function(stmt["vbind_col_"   .. tname], "Unknown ODBC type: " .. tname)
     assert_function(stmt["vbind_param_" .. tname], "Unknown ODBC type: " .. tname)
   end
-
 end
 
 function test_default_options()

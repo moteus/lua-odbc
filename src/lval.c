@@ -286,7 +286,6 @@ static int lodbc_date_set(lua_State *L, lodbc_date *val, int idx, int opt){
 #endif
     (str, "%d-%d-%d", &y, &m, &d)
   ){
-
     val->data.year  = y;
     val->data.month = m;
     val->data.day   = d;
@@ -333,7 +332,7 @@ static int lodbc_time_set(lua_State *L, lodbc_time *val, int idx, int opt){
 #else
     sscanf
 #endif
-    (str, "%d-%d-%d", &h, &m, &s)
+    (str, "%d:%d:%d", &h, &m, &s)
   ){
     val->data.hour   = h;
     val->data.minute = m;
@@ -351,6 +350,88 @@ static int lodbc_time_get(lua_State *L, lodbc_time *val){
   sprintf(str,
 #endif
   "%.2d:%.2d:%.2d", val->data.hour, val->data.minute, val->data.second);
+  lua_pushstring(L, str);
+  return 1;
+}
+
+//}
+
+//{ timestamp
+
+#if (LODBC_ODBCVER >= 0x0300)
+#  define lodbc_timestamp_CTYPE  SQL_C_TYPE_TIMESTAMP
+#  define lodbc_timestamp_STYPE  SQL_TYPE_TIMESTAMP
+#else
+#  define lodbc_timestamp_CTYPE  SQL_C_TIMESTAMP
+#  define lodbc_timestamp_STYPE  SQL_TIMESTAMP
+#endif
+
+make_fixsize_T(timestamp, SQL_TIMESTAMP_STRUCT)
+
+static int lodbc_timestamp_set(lua_State *L, lodbc_timestamp *val, int idx, int opt){
+  int dy, dm, dd;
+  int th, tm, ts, tf;
+
+  const char *str;
+  if(opt && !lua_isstring(L,idx))
+    return 0;
+  str = luaL_checkstring(L,idx);
+  if(7 == 
+#ifdef _MSC_VER
+    sscanf_s
+#else
+    sscanf
+#endif
+    (str, "%d-%d-%d %d:%d:%d.%d", &dy, &dm, &dd, &th, &tm, &ts, &tf)
+  ){
+    val->data.year   = dy;
+    val->data.month  = dm;
+    val->data.day    = dd;
+    val->data.hour   = th;
+    val->data.minute = tm;
+    val->data.second = ts;
+    val->data.fraction = tf;
+    val->ind         = 0;
+  }
+  else if(6 == 
+#ifdef _MSC_VER
+    sscanf_s
+#else
+    sscanf
+#endif
+    (str, "%d-%d-%d %d:%d:%d", &dy, &dm, &dd, &th, &tm, &ts)
+  ){
+    val->data.year   = dy;
+    val->data.month  = dm;
+    val->data.day    = dd;
+    val->data.hour   = th;
+    val->data.minute = tm;
+    val->data.second = ts;
+    val->data.fraction = 0;
+    val->ind         = 0;
+  }
+
+  return 0;
+}
+
+static int lodbc_timestamp_get(lua_State *L, lodbc_timestamp *val){
+  char str[128];
+  if(val->data.fraction){
+#ifdef _MSC_VER
+    sprintf_s(str,sizeof(str),
+#else
+    sprintf(str,
+#endif
+    "%.4d-%.2d-%.2d %.2d:%.2d:%.2d.%d", val->data.year, val->data.month, val->data.day, val->data.hour, val->data.minute, val->data.second, val->data.fraction);
+  }
+  else{
+#ifdef _MSC_VER
+    sprintf_s(str,sizeof(str),
+#else
+    sprintf(str,
+#endif
+    "%.4d-%.2d-%.2d %.2d:%.2d:%.2d", val->data.year, val->data.month, val->data.day, val->data.hour, val->data.minute, val->data.second);
+  }
   lua_pushstring(L, str);
   return 1;
 }
@@ -976,6 +1057,7 @@ static const struct luaL_Reg lodbc_val_func[] = {
   ctor_record( wchar    ),
   ctor_record( date     ),
   ctor_record( time     ),
+  ctor_record( timestamp),
   ctor_record( bit      ),
 
   {NULL, NULL}
@@ -997,6 +1079,7 @@ void lodbc_val_initlib (lua_State *L, int nup){
   reg_type( wchar    );
   reg_type( date     );
   reg_type( time     );
+  reg_type( timestamp);
   reg_type( bit      );
 
   lua_pop(L, nup);

@@ -99,7 +99,7 @@ end
 
 local fix_types = {
   'ubigint', 'sbigint', 'utinyint', 'stinyint', 'ushort', 'sshort', 
-  'ulong', 'slong', 'float', 'double', 'date', 'time', 'bit'
+  'ulong', 'slong', 'float', 'double', 'date', 'time', 'timestamp', 'bit'
 }
 
 local buf_types = {'char', 'binary', 'wchar'}
