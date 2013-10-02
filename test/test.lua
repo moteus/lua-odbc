@@ -1,5 +1,7 @@
+require "tools"
 print("------------------------------------")
-print("Lua version: " .. (_G.jit and _G.jit.version or _G._VERSION))
+print("     Lua version: " .. (_G.jit and _G.jit.version or _G._VERSION))
+print("Lua-ODBC version: " .. odbc._VERSION)
 print("------------------------------------")
 print("") 
 local HAS_RUNNER = not not lunit
