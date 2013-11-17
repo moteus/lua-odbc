@@ -148,3 +148,7 @@ And from Lua we can call this function just like `... = odbc.first_row("select .
 
 ## odbc.dba module ##
 Implementaion of [dba](http://moteus.github.io/dba/index.html) API
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moteus/lua-odbc/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
