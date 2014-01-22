@@ -73,4 +73,6 @@ LODBC_INTERNAL int lodbc_make_weak_table(lua_State*L, const char *mode);
 
 LODBC_INTERNAL int lodbc_pcall_method(lua_State *L, const char *name, int nargs, int nresults, int errfunc);
 
+#define LODBC_STATIC_ASSERT(A) {(int(*)[(A)?1:0])0;}
+
 #endif

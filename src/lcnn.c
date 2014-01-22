@@ -135,20 +135,26 @@ static void call_stmt_destroy(lua_State *L){
   lua_settop(L, top); // ignore any error
 }
 
+static void cnn_close_statements(lua_State *L, lodbc_cnn *cnn){
+  if(LUA_NOREF != cnn->stmt_list_ref){
+    int top = lua_gettop(L);
+    lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_list_ref);
+    assert(lua_istable(L, -1));
+    lua_pushnil(L);
+    while(lua_next(L, -2)){
+      lua_pop(L, 1); // we do not need value
+      call_stmt_destroy(L);
+    }
+    lua_settop(L, top);
+  }
+}
+
 static int cnn_destroy (lua_State *L) {
   lodbc_cnn *cnn = (lodbc_cnn *)lutil_checkudatap (L, 1, LODBC_CNN);
   luaL_argcheck (L, cnn != NULL, 1, LODBC_PREFIX "connection expected");
 
   if(!(cnn->flags & LODBC_FLAG_DESTROYED)){
-    if(LUA_NOREF != cnn->stmt_list_ref){
-      lua_rawgeti(L, LODBC_LUA_REGISTRY, cnn->stmt_list_ref);
-      assert(lua_istable(L, -1));
-      lua_pushnil(L);
-      while(lua_next(L, -2)){
-        lua_pop(L, 1); // we do not need value
-        call_stmt_destroy(L);
-      }
-    }
+    cnn_close_statements(L, cnn);
 
     if (cnn->stmt_counter > 0)
       return luaL_error (L, LODBC_PREFIX"there are open statements");
@@ -232,6 +238,47 @@ static int cnn_setuservalue(lua_State *L){
 static int cnn_statement_count(lua_State *L){
   lodbc_cnn *cnn = lodbc_getcnn(L);
   lua_pushnumber(L, cnn->stmt_counter);
+  return 1;
+}
+
+static int cnn_handle(lua_State *L){
+  lodbc_cnn *cnn = lodbc_getcnn(L);
+  LODBC_STATIC_ASSERT(sizeof(cnn->handle) <= sizeof(void*));
+  lua_pushlightuserdata(L, (void*)cnn->handle);
+  return 1;
+}
+
+static int cnn_reset_handle(lua_State *L) {
+  lodbc_cnn *cnn = lodbc_getcnn(L);
+  void *src  = lua_touserdata(L, 2);
+  int own    = lua_isnoneornil(L, 3) ? 
+    ((cnn->flags & LODBC_FLAG_DONT_DESTROY)?0:1) :
+    lua_toboolean(L, 3);
+  int close = lua_isnoneornil(L, 4) ? 
+    ((cnn->flags & LODBC_FLAG_DONT_DESTROY)?0:1) :
+    lua_toboolean(L, 4);
+
+  SQLHDBC h = cnn->handle;
+  LODBC_STATIC_ASSERT(sizeof(cnn->handle) <= sizeof(void*));
+
+  cnn_close_statements(L, cnn);
+  if (cnn->stmt_counter > 0)
+    return luaL_error (L, LODBC_PREFIX"there are open statements");
+
+  luaL_argcheck(L, lua_islightuserdata(L, 2), 2, "lightuserdata expected");
+
+  cnn->handle = (SQLHDBC)src;
+  if(own) cnn->flags &= ~LODBC_FLAG_DONT_DESTROY;
+  else    cnn->flags |=  LODBC_FLAG_DONT_DESTROY;
+
+  if(close){
+    SQLFreeHandle (hDBC, h);
+    lua_pushboolean(L, 1);
+  }
+  else{
+    lua_pushlightuserdata(L, h);
+  }
+
   return 1;
 }
 
@@ -2253,6 +2300,9 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"rollback",      cnn_rollback},
 
   {"statement",     cnn_statement},
+
+  {"handle",        cnn_handle},
+  {"reset_handle",  cnn_reset_handle},
 
   {"getuservalue",  cnn_getuservalue},
   {"setuservalue",  cnn_setuservalue},

@@ -15,4 +15,5 @@ require "05_test_odbc_foreach"
 require "06_test_odbc_more"
 require "07_test_odbc_val"
 require "08_test_odbc_stmt"
+require "09_test_odbc_cnn_handle"
 if not HAS_RUNNER then run_test{...} end

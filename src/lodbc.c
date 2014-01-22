@@ -64,6 +64,15 @@ static int lodbc_environment_(lua_State *L){
   return lodbc_environment_create(L, SQL_NULL_HANDLE, 1);
 }
 
+static int lodbc_init_connection(lua_State *L){
+  void *src = lua_touserdata(L, 1);
+  int   own = lua_toboolean(L, 2);
+  luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "lightuserdata expected");
+
+  LODBC_STATIC_ASSERT(sizeof(src) <= sizeof(SQLHDBC));
+  return lodbc_connection(L, (SQLHDBC)src, own);
+}
+
 static int lodbc_getenvmeta(lua_State *L){
   lutil_getmetatablep(L, LODBC_ENV);
   return 1;
@@ -83,9 +92,11 @@ static const struct luaL_Reg lodbc_func[]   = {
   { "version",      lodbc_version_        },
   { "environment",  lodbc_environment_    },
 
-  { "getenvmeta",   lodbc_getenvmeta   },
-  { "getcnnmeta",   lodbc_getcnnmeta   },
-  { "getstmtmeta",  lodbc_getstmtmeta  },
+  { "getenvmeta",   lodbc_getenvmeta      },
+  { "getcnnmeta",   lodbc_getcnnmeta      },
+  { "getstmtmeta",  lodbc_getstmtmeta     },
+
+  { "init_connection",  lodbc_init_connection },
 
   {NULL, NULL}
 };
