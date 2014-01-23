@@ -45,6 +45,19 @@ local function Connection_new(env, ...)
   return cnn
 end
 
+local init_connection = odbc.init_connection
+local function Connection_wrap(hcnn, ...)
+  local cnn, err = init_connection(hcnn)
+  if not cnn then return nil, err end
+  cnn:setautoclosestmt(true)
+
+  set_user_val(cnn, {
+    params = pack_n(...);
+  })
+
+  return cnn
+end
+
 local function Statement_new(cnn, sql)
   local stmt, err = cnn:statement_impl()
   if not stmt then return nil, err end
@@ -138,6 +151,8 @@ end
 
 odbc.connect = odbc.Connect
 
+odbc.init_connection = Connection_wrap
+
 end
 -------------------------------------------------------------------------------
 
@@ -227,9 +242,9 @@ local function connect(obj, ...)
   return cnn, err
 end
 
-function Connection:handle()
-  return self
-end
+-- function Connection:handle()
+--   return self
+-- end
 
 function Connection:connect(...)
   self:disconnect()

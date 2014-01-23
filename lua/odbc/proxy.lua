@@ -45,6 +45,15 @@ function _M.getcnnmeta()  return Connection  end
 
 function _M.getstmtmeta() return Statement   end
 
+local init_connection = odbc.init_connection
+function _M.init_connection(...)
+  local cnn, err = init_connection(...)
+  if not cnn then return nil, err end
+  local obj = setmeta({_self=cnn}, Connection)
+  set_user_val(cnn, obj)
+  return obj
+end
+
 local environment = odbc.environment
 function _M.environment(...)
   local env, err = environment(...)
