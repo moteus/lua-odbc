@@ -2,45 +2,24 @@ language: erlang
 
 env:
   global:
-    - LUAROCKS_VER=2.0.13
-    - LUAROCKS_BASE=luarocks-$LUAROCKS_VER
-    - LUAROCKS_INSTALL=wget
+    - PLATFORM=linux
+    - LUAROCKS_VER=2.1.0
     - LUAODBC_TEST_DBMS=MySQL
   matrix:
-    - LUA=lua5.1 LUA_DEV=liblua5.1-dev LUA_VER=5.1 LUA_SFX=5.1 LUA_INCDIR=/usr/include/lua5.1
-    - LUA=lua5.2 LUA_DEV=liblua5.2-dev LUA_VER=5.2 LUA_SFX=5.2 LUA_INCDIR=/usr/include/lua5.2
-    - LUA=luajit LUA_DEV=libluajit-5.1-dev LUA_VER=5.1 LUA_SFX=jit LUA_INCDIR=/usr/include/luajit-2.0
+    - LUA=lua5.1 LUA_SFX=
+    - LUA=lua5.2 LUA_SFX=
+    - LUA=luajit LUA_SFX=jit
 
 branches:
   only:
     - master
 
 before_install:
-  - if [ $LUA = "luajit" ]; then
-      sudo add-apt-repository ppa:mwild1/ppa -y && sudo apt-get update -y;
-    fi
-  - sudo apt-get install $LUA
-  - sudo apt-get install $LUA_DEV
-  - lua$LUA_SFX -v
-  # Install a recent luarocks release
-  - if [ $LUAROCKS_INSTALL = "git" ]; then
-      git clone https://github.com/keplerproject/luarocks.git;
-      cd luarocks;
-      git checkout v$LUAROCKS_VER;
-    else
-      wget http://luarocks.org/releases/$LUAROCKS_BASE.tar.gz;
-      tar zxvpf $LUAROCKS_BASE.tar.gz;
-      cd $LUAROCKS_BASE;
-    fi
-  - ./configure
-    --lua-version=$LUA_VER --lua-suffix=$LUA_SFX --with-lua-include="$LUA_INCDIR"
-  - sudo make
-  - sudo make install
-  - cd $TRAVIS_BUILD_DIR
+  - bash .travis/setup_lua.sh
   - mysql --version
+  - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
 
 install:
-  - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
   - sudo odbcinst -i -d -f /usr/share/libmyodbc/odbcinst.ini
   - sudo odbcinst -i -s -l -f ./test/mytest.odbc.ini
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
@@ -48,10 +27,12 @@ install:
   - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
   - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():datasources(print)"
 
-script: 
-  - "cd test/dba && lunit.sh -i lua$LUA_SFX test.lua"
-  - "cd .. && lunit.sh -i lua$LUA_SFX test.lua"
-  - "lua$LUA_SFX luasql/test-luasql.lua"
+script:
+  - cd test/dba
+  - lunit.sh -i lua$LUA_SFX test.lua
+  - cd .. 
+  - lunit.sh -i lua$LUA_SFX test.lua
+  - lua$LUA_SFX luasql/test-luasql.lua
 
 notifications:
   email:
