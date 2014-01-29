@@ -125,14 +125,18 @@ static int is_odbc_err(lua_State *L, int i){
 }
 
 static int lodbc_assert (lua_State *L){
-  if (!lua_toboolean(L, 1)){
-    if(is_odbc_err(L, 2)){
-      lua_remove(L, 1);
-      lua_settop(L, 1);
-      err_tostring(L);
-      return lua_error(L);
+  if(!lua_toboolean(L, 1)){
+    if(lua_isnoneornil(L, 2) || lua_isstring(L, 2)){
+      return luaL_error(L, "%s", luaL_optstring(L, 2, "assertion failed!"));
     }
-    return luaL_error(L, "%s", luaL_optstring(L, 2, "assertion failed!"));
+    lua_remove(L, 1);
+    lua_settop(L, 1);
+
+#ifdef LODBC_ASSERT_TOSTRING
+    luaL_callmeta(L, 1, "__tostring");
+#endif
+
+    return lua_error(L);
   }
   return lua_gettop(L);
 }

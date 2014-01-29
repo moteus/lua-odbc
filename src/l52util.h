@@ -29,6 +29,9 @@ void  lua_rawgetp   (lua_State *L, int index, const void *p);
 void  lua_rawsetp   (lua_State *L, int index, const void *p);
 void  luaL_setfuncs  (lua_State *L, const luaL_Reg *l, int nup);
 
+int luaL_getmetafield (lua_State *L, int obj, const char *event);
+int luaL_callmeta (lua_State *L, int obj, const char *event);
+
 #endif
 
 int   lutil_newmetatablep (lua_State *L, const void *p);

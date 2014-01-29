@@ -5,9 +5,9 @@ local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
 local arg = {...}
 
-local env, cnn, stmt
+local _ENV = TEST_CASE'ODBC Library' do
 
-local _ENV = TEST_CASE'Library test'
+local env, cnn, stmt
 
 local odbc_types = {
   'ubigint', 'sbigint', 'utinyint', 'stinyint', 'ushort', 'sshort', 
@@ -241,6 +241,40 @@ function test_version()
   end
 
   assert_equal(ver, odbc._VERSION)
+end
+
+end
+
+local _ENV = TEST_CASE'ODBC assert'  do
+
+local env, cnn
+
+function teardown()
+  if cnn then cnn:destroy() end
+  if env then env:destroy() end
+  cnn, env = nil
+end
+
+function test_non_odbc_error()
+  -- test non odbc error
+  local E = {}
+  local ok, err = pcall(function() odbc.assert(nil, E) end)
+  assert_false(ok)
+  assert_equal(E, err)
+end
+
+function test_odbc_error()
+  -- test odbc error
+  env = assert_not_nil(odbc.environment()) 
+  cnn = assert_not_nil(env:connection())
+  local ok, E = cnn:connected()
+  assert_nil(ok)
+
+  local ok, err = pcall(function() odbc.assert(nil, E) end)
+  assert_false(ok)
+  assert_equal(E, err)
+end
+
 end
 
 local_run_test(arg)
