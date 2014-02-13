@@ -1,0 +1,12 @@
+name = "odbc"
+version = "0.2.0"
+
+desc = "ODBC library for Lua"
+author = "Alexey Melnichuk"
+license = "MIT/X11"
+url = "https://github.com/moteus/lua-odbc"
+maintainer = "Alexey Melnichuk"
+
+depends = {
+  "lua >= 5.1"
+}
