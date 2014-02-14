@@ -284,11 +284,13 @@ static int cnn_reset_handle(lua_State *L) {
 
 //{ connect
 
-static int conn_after_connect(lua_State *L){
+int lodbc_cnn_init_support(lua_State *L){
   lodbc_cnn *cnn = lodbc_getcnn(L);
 
   int top = lua_gettop(L);
   memset(&cnn->supports[0],0,LODBC_CNN_SUPPORT_MAX * sizeof(cnn->supports[0]));
+
+  cnn->supports[LODBC_CNN_SUPPORT_INIT] = 1;
 
   {SQLUSMALLINT val = 0;
   SQLRETURN ret = SQLGetFunctions(cnn->handle,SQL_API_SQLPREPARE,&val);
@@ -349,7 +351,7 @@ static int cnn_driverconnect(lua_State *L){
   lua_pushstring(L,(char*)buf);
   free(buf);
 
-  conn_after_connect(L);
+  lodbc_cnn_init_support(L);
   return 2;
 }
 
@@ -363,7 +365,7 @@ static int cnn_connect (lua_State *L) {
     (SQLCHAR *) username, SQL_NTS, (SQLCHAR *) password, SQL_NTS);
   if (lodbc_iserror(ret)) return lodbc_fail(L, hDBC, cnn->handle);
 
-  conn_after_connect(L);
+  lodbc_cnn_init_support(L);
   lua_pushvalue(L,1);
   return 1;
 }
@@ -617,8 +619,6 @@ static int cnn_gettrace(lua_State *L){
   return 1;
 }
 
-static int cnn_supportsTransactions(lua_State *L);
-
 static int cnn_gettransactionisolation(lua_State *L) {
   int ret;
   lodbc_cnn *cnn = lodbc_getcnn (L);
@@ -766,18 +766,24 @@ static int cnn_get_str_info(lua_State*L){
 
 static int cnn_has_prepare(lua_State*L){
   lodbc_cnn *cnn = lodbc_getcnn (L);
+  if(!cnn->supports[LODBC_CNN_SUPPORT_INIT])
+    lodbc_cnn_init_support(L);
   lua_pushboolean(L, cnn->supports[LODBC_CNN_SUPPORT_PREPARE]);
   return 1;
 }
 
 static int cnn_has_bindparam(lua_State*L){
   lodbc_cnn *cnn = lodbc_getcnn (L);
+  if(!cnn->supports[LODBC_CNN_SUPPORT_INIT])
+    lodbc_cnn_init_support(L);
   lua_pushboolean(L, cnn->supports[LODBC_CNN_SUPPORT_BINDPARAM]);
   return 1;
 }
 
 static int cnn_has_txn(lua_State*L){
   lodbc_cnn *cnn = lodbc_getcnn(L);
+  if(!cnn->supports[LODBC_CNN_SUPPORT_INIT])
+    lodbc_cnn_init_support(L);
   lua_pushboolean(L, cnn->supports[LODBC_CNN_SUPPORT_TXN]);
   return 1;
 }
@@ -2282,7 +2288,6 @@ static int cnn_getcolumns(lua_State *L){
 //}
 
 //}----------------------------------------------------------------------------
-
 
 static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"__gc",          cnn_destroy},

@@ -5,11 +5,12 @@
 
 typedef struct lodbc_env lodbc_env;
 
-#define LODBC_CNN_SUPPORT_TXN       0
-#define LODBC_CNN_SUPPORT_PREPARE   1
-#define LODBC_CNN_SUPPORT_BINDPARAM 2
-#define LODBC_CNN_SUPPORT_NUMPARAMS 3
-#define LODBC_CNN_SUPPORT_MAX       4
+#define LODBC_CNN_SUPPORT_INIT      0
+#define LODBC_CNN_SUPPORT_TXN       1
+#define LODBC_CNN_SUPPORT_PREPARE   2
+#define LODBC_CNN_SUPPORT_BINDPARAM 3
+#define LODBC_CNN_SUPPORT_NUMPARAMS 4
+#define LODBC_CNN_SUPPORT_MAX       5
 
 //{ libodbc  enum TransactionIsolation 
 /** The data source does not support transactions */
@@ -46,5 +47,7 @@ LODBC_INTERNAL void lodbc_cnn_initlib (lua_State *L, int nup);
 // env_idx - индекс объекта env на стеке (opt)
 // own - true - передается право владения(объект ответственен за закрытие описателя)
 LODBC_INTERNAL int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_idx, uchar own);
+
+LODBC_INTERNAL int lodbc_cnn_init_support(lua_State *L);
 
 #endif 

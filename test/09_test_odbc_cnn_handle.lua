@@ -53,4 +53,11 @@ function test_clone_close_stmt()
   assert_true(stmt:destroyed())
 end
 
+function test_clone_cnn_info()
+  clone_cnn(cnn)
+  assert_true(cnn2:connected())
+  local flag = assert_boolean(cnn:supportsTransactions())
+  assert_equal(flag, cnn2:supportsTransactions())
+end
+
 local_run_test(arg)
