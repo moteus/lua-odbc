@@ -5,7 +5,7 @@ include ( cmake/dist.cmake )
 include ( lua )
 
 include_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-include_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/src )
+include_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/src     )
 
 find_package ( ODBC REQUIRED )
 
@@ -17,10 +17,10 @@ set ( LODBC_SOURCE
   src/parlist.c  src/utils.c
 )
 
+set ( LODBC_DEFINITIONS LUAODBC_EXPORTS LODBC_ERROR_AS_OBJECT LODBC_MIN_PAR_BUFSIZE=64 )
+
 if ( UNIX )
-  set ( LODBC_DEFINITIONS UNIXODBC LUAODBC_EXPORTS LODBC_ERROR_AS_OBJECT LODBC_MIN_PAR_BUFSIZE=64)
-else ( )
-  set ( LODBC_DEFINITIONS LUAODBC_EXPORTS LODBC_ERROR_AS_OBJECT LODBC_MIN_PAR_BUFSIZE=64 )
+  list ( APPEND LODBC_DEFINITIONS UNIXODBC )
 endif ( )
 
 install_lua_module ( odbc.core ${LODBC_SOURCE} LINK ${ODBC_LIBRARIES} )
@@ -33,8 +33,6 @@ install_lua_module ( odbc.dba       lua/odbc/dba.lua       )
 install_lua_module ( odbc.dba.utils lua/odbc/dba/utils.lua )
 install_lua_module ( odbc.proxy     lua/odbc/proxy.lua     )
 
-
 install_data ( README.md LICENCE.txt )
 
-install_test( test/ )
-
+install_test ( test/ )
