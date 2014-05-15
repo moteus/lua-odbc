@@ -246,6 +246,4 @@ return {
   param_utils  = param_utils;
   user_val     = user_val;
   set_user_val = set_user_val;
-  bind_param   = bind_param;
-  rows         = rows;
 }

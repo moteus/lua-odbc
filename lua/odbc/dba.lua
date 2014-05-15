@@ -307,7 +307,7 @@ function Connection:execute(sql, params)
             local ok, err = bind_param(stmt, paramNo, value)
             if not ok then
               stmt:destroy()
-              return nil, err, i
+              return nil, err, paramNo
             end
           else
             stmt:destroy()
