@@ -13,6 +13,7 @@ env:
 branches:
   only:
     - master
+    - gcc44
 
 before_install:
   - bash .travis/setup_lua.sh

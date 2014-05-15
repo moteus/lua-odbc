@@ -3,7 +3,7 @@
 
 #include "lodbc.h"
 
-typedef struct par_data_tag{
+typedef struct par_data{
   union{
     struct{
       SQLPOINTER           buf;
@@ -17,7 +17,7 @@ typedef struct par_data_tag{
   SQLSMALLINT          digest;
   SQLLEN               ind;
   int                  get_cb;   /* reference to callback */
-  struct par_data_tag* next;
+  struct par_data     *next;
 } par_data;
 
 LODBC_INTERNAL int par_data_setparinfo(par_data* par, lua_State *L, SQLHSTMT hstmt, SQLSMALLINT i);

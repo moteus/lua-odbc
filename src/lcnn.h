@@ -3,7 +3,7 @@
 
 #include "lodbc.h"
 
-typedef struct lodbc_env lodbc_env;
+struct lodbc_env;
 
 #define LODBC_CNN_SUPPORT_INIT      0
 #define LODBC_CNN_SUPPORT_TXN       1
@@ -31,7 +31,7 @@ typedef struct lodbc_cnn{
   int      stmt_counter;
   signed char supports[LODBC_CNN_SUPPORT_MAX];
 
-  lodbc_env *env;
+  struct lodbc_env *env;
   int       env_ref;
 
   int       stmt_list_ref; // list for autoclose statements
@@ -46,7 +46,7 @@ LODBC_INTERNAL void lodbc_cnn_initlib (lua_State *L, int nup);
 // env - кто распределил (opt)
 // env_idx - индекс объекта env на стеке (opt)
 // own - true - передается право владения(объект ответственен за закрытие описателя)
-LODBC_INTERNAL int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, lodbc_env *env, int env_idx, uchar own);
+LODBC_INTERNAL int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, struct lodbc_env *env, int env_idx, uchar own);
 
 LODBC_INTERNAL int lodbc_cnn_init_support(lua_State *L);
 
