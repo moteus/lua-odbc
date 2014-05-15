@@ -2,6 +2,8 @@
 -- See Copyright Notice in license.html
 -- $Id: test.lua,v 1.52 2008/06/30 10:43:03 blumf Exp $
 
+pcall(require, "luacov")
+
 require "../config"
 
 

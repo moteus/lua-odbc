@@ -1,0 +1,3 @@
+return {
+  statsfile = "../luacov.stats.out"
+}
