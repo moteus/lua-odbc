@@ -13,19 +13,23 @@ env:
 branches:
   only:
     - master
+    - gcc44
 
 before_install:
   - bash .travis/setup_lua.sh
   - mysql --version
   - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
+  - sudo pip install cpp-coveralls
 
 install:
+  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov/moteus-rockspec/rockspecs/luacov-scm.mot-1.rockspec
+  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov-coveralls/master/rockspecs/luacov-coveralls-scm-0.rockspec
   - sudo odbcinst -i -d -f /usr/share/libmyodbc/odbcinst.ini
   - sudo odbcinst -i -s -l -f ./test/mytest.odbc.ini
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
-  - sudo luarocks make rockspec/odbc-scm-0.rockspec
-  - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
-  - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():datasources(print)"
+  - sudo luarocks make rockspec/odbc-scm-0.rockspec CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
+  # - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
+  # - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():datasources(print)"
 
 script:
   - cd test/dba
@@ -33,6 +37,11 @@ script:
   - cd .. 
   - lunit.sh -i lua$LUA_SFX test.lua
   - lua$LUA_SFX luasql/test-luasql.lua
+
+after_success:
+  - coveralls -e lua-5.1.5 -e lua-5.2.3 -e LuaJIT-2.0.3 -b .. -r .. --dump c.report.json
+  - luacov-coveralls -j c.report.json
+  - curl --form "json_file=@luacov.report.json;type=application/json" https://coveralls.io/api/v1/jobs
 
 notifications:
   email:

@@ -3,8 +3,8 @@
 
 #include "lodbc.h"
 
-typedef struct par_data_tag par_data;
-typedef struct lodbc_cnn lodbc_cnn;
+struct par_data;
+struct lodbc_cnn;
 
 typedef struct lodbc_stmt{
   uchar     flags;
@@ -14,8 +14,8 @@ typedef struct lodbc_stmt{
   int       numcols, numpars;
   int       resultsetno;
   uchar     autoclose;
-  par_data  *par;
-  lodbc_cnn *cnn;
+  struct par_data  *par;
+  struct lodbc_cnn *cnn;
   int       cnn_ref;
   SQLRETURN last_exec_ret;
 } lodbc_stmt;
@@ -25,6 +25,6 @@ LODBC_INTERNAL lodbc_stmt *lodbc_getstmt_at (lua_State *L, int i);
 
 LODBC_INTERNAL void lodbc_stmt_initlib (lua_State *L, int nup);
 
-LODBC_INTERNAL int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, lodbc_cnn *cnn, int cnn_idx, uchar own, int ncols, uchar opened);
+LODBC_INTERNAL int lodbc_statement_create (lua_State *L, SQLHSTMT hstmt, struct lodbc_cnn *cnn, int cnn_idx, uchar own, int ncols, uchar opened);
 
 #endif

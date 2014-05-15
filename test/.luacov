@@ -1,0 +1,25 @@
+return {
+  statsfile   = "luacov.stats.out";
+  reportfile  = "luacov.report.json";
+  runreport   = false;
+  deletestats = false;
+
+  include = {
+    "/odbc$",
+    "/odbc/.+$",
+  };
+
+  exclude = {
+  };
+
+  coveralls = {
+
+    debug = true;
+
+    pathcorrect = {
+      {"/usr/local/share/lua/5.[12]", "lua"};
+    };
+
+  };
+
+}

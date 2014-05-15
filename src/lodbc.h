@@ -58,11 +58,11 @@
 
 typedef unsigned char uchar;
 
-// объект уничтожен
+// РѕР±СЉРµРєС‚ СѓРЅРёС‡С‚РѕР¶РµРЅ
 #define LODBC_FLAG_DESTROYED        (uchar)0x01 
-// при унчтожении не освобождать ресурсы
+// РїСЂРё СѓРЅС‡С‚РѕР¶РµРЅРёРё РЅРµ РѕСЃРІРѕР±РѕР¶РґР°С‚СЊ СЂРµСЃСѓСЂСЃС‹
 #define LODBC_FLAG_DONT_DESTROY     (uchar)0x02 
-// объект открыт
+// РѕР±СЉРµРєС‚ РѕС‚РєСЂС‹С‚
 #define LODBC_FLAG_OPENED           (uchar)0x04 
 
 #define LODBC_FLAG_PREPARED         (uchar)0x08 
@@ -71,10 +71,10 @@ typedef unsigned char uchar;
 
 #define LODBC_ASTATE_NONE            (uchar)0
 
-// Выполняется асинхронный execute
+// Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ Р°СЃРёРЅС…СЂРѕРЅРЅС‹Р№ execute
 #define LODBC_ASTATE_EXECUTE         (uchar)1
 
-// Выполняется асинхронный ParamData
+// Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ Р°СЃРёРЅС…СЂРѕРЅРЅС‹Р№ ParamData
 #define LODBC_ASTATE_PARAMDATA       (uchar)2
 #define LODBC_ASTATE_FETCH           (uchar)3
 #define LODBC_ASTATE_NEXTRS          (uchar)4
