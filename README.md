@@ -1,6 +1,7 @@
 # ODBC library for Lua 5.1/5.2 #
 
 [![Build Status](https://travis-ci.org/moteus/lua-odbc.png?branch=master)](https://travis-ci.org/moteus/lua-odbc)
+[![Coverage Status](https://img.shields.io/coveralls/moteus/lua-odbc.svg)](https://coveralls.io/r/moteus/lua-odbc?branch=master)
 
 ## Supports ##
 - prepared query
