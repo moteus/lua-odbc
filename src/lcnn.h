@@ -42,10 +42,10 @@ LODBC_INTERNAL lodbc_cnn *lodbc_getcnn_at (lua_State *L, int i);
 
 LODBC_INTERNAL void lodbc_cnn_initlib (lua_State *L, int nup);
 
-// hdbc - валидный описатель
-// env - кто распределил (opt)
-// env_idx - индекс объекта env на стеке (opt)
-// own - true - передается право владения(объект ответственен за закрытие описателя)
+// hdbc - РІР°Р»РёРґРЅС‹Р№ РѕРїРёСЃР°С‚РµР»СЊ
+// env - РєС‚Рѕ СЂР°СЃРїСЂРµРґРµР»РёР» (opt)
+// env_idx - РёРЅРґРµРєСЃ РѕР±СЉРµРєС‚Р° env РЅР° СЃС‚РµРєРµ (opt)
+// own - true - РїРµСЂРµРґР°РµС‚СЃСЏ РїСЂР°РІРѕ РІР»Р°РґРµРЅРёСЏ(РѕР±СЉРµРєС‚ РѕС‚РІРµС‚СЃС‚РІРµРЅРµРЅ Р·Р° Р·Р°РєСЂС‹С‚РёРµ РѕРїРёСЃР°С‚РµР»СЏ)
 LODBC_INTERNAL int lodbc_connection_create(lua_State *L, SQLHDBC hdbc, struct lodbc_env *env, int env_idx, uchar own);
 
 LODBC_INTERNAL int lodbc_cnn_init_support(lua_State *L);
