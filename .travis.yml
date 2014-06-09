@@ -2,13 +2,12 @@ language: erlang
 
 env:
   global:
-    - PLATFORM=linux
-    - LUAROCKS_VER=2.1.0
+    - LUAROCKS=2.2.0beta1
     - LUAODBC_TEST_DBMS=MySQL
   matrix:
-    - LUA=lua5.1 LUA_SFX=
-    - LUA=lua5.2 LUA_SFX=
-    - LUA=luajit LUA_SFX=jit
+    - LUA=lua5.1
+    - LUA=lua5.2
+    - LUA=luajit
 
 branches:
   only:
@@ -17,31 +16,29 @@ branches:
 
 before_install:
   - bash .travis/setup_lua.sh
+  - sudo pip install cpp-coveralls
+  - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
   - mysql --version
   - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
-  - sudo pip install cpp-coveralls
-
-install:
-  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov/moteus-rockspec/rockspecs/luacov-scm.mot-1.rockspec
-  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov-coveralls/master/rockspecs/luacov-coveralls-scm-0.rockspec
   - sudo odbcinst -i -d -f /usr/share/libmyodbc/odbcinst.ini
   - sudo odbcinst -i -s -l -f ./test/mytest.odbc.ini
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
+
+install:
   - sudo luarocks make rockspec/odbc-scm-0.rockspec CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
-  # - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():drivers(print)"
-  # - lua$LUA_SFX -e "odbc=require'odbc';odbc.environment():datasources(print)"
+  - lua -e "odbc=require'odbc';odbc.environment():drivers(print)"
+  - lua -e "odbc=require'odbc';odbc.environment():datasources(print)"
 
 script:
   - cd test/dba
-  - lunit.sh -i lua$LUA_SFX test.lua
+  - lunit.sh test.lua
   - cd .. 
-  - lunit.sh -i lua$LUA_SFX test.lua
-  - lua$LUA_SFX luasql/test-luasql.lua
+  - lunit.sh test.lua
+  - lua luasql/test-luasql.lua
 
 after_success:
-  - coveralls -e lua-5.1.5 -e lua-5.2.3 -e LuaJIT-2.0.3 -b .. -r .. --dump c.report.json
+  - coveralls -b .. -r .. --dump c.report.json
   - luacov-coveralls -j c.report.json
-  - curl --form "json_file=@luacov.report.json;type=application/json" https://coveralls.io/api/v1/jobs
 
 notifications:
   email:
