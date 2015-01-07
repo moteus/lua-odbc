@@ -125,12 +125,14 @@ void *lutil_checkudatap (lua_State *L, int ud, const void *p) {
 }
 
 int lutil_createmetap (lua_State *L, const void *p, const luaL_Reg *methods, int nup) {
-  if (!lutil_newmetatablep(L, p))
+  if (!lutil_newmetatablep(L, p)){
+    lua_insert(L, -1 - nup);       /* move mt prior upvalues */
     return 0;
+  }
 
   lua_insert(L, -1 - nup);         /* move mt prior upvalues */
   luaL_setfuncs (L, methods, nup); /* define methods */
-  lua_pushliteral (L, "__index"); /* define metamethods */
+  lua_pushliteral (L, "__index");  /* define metamethods */
   lua_pushvalue (L, -2);
   lua_settable (L, -3);
 
@@ -142,4 +144,29 @@ void *lutil_newudatap_impl(lua_State *L, size_t size, const void *p){
   memset(obj, 0, size);
   lutil_setmetatablep(L, p);
   return obj;
+}
+
+void lutil_pushint64(lua_State *L, int64_t v){
+  if(sizeof(lua_Integer) >= sizeof(int64_t)){
+    lua_pushinteger(L, (lua_Integer)v);
+    return;
+  }
+  lua_pushnumber(L, (lua_Number)v);
+}
+
+int64_t lutil_checkint64(lua_State *L, int idx){
+  if(sizeof(lua_Integer) >= sizeof(int64_t))
+    return luaL_checkinteger(L, idx);
+  return (int64_t)luaL_checknumber(L, idx);
+}
+
+int64_t lutil_optint64(lua_State *L, int idx, int64_t v){
+  if(sizeof(lua_Integer) >= sizeof(int64_t))
+    return luaL_optinteger(L, idx, v);
+  return (int64_t)luaL_optnumber(L, idx, (lua_Number)v);
+}
+
+void lutil_pushnvalues(lua_State *L, int n){
+  int i = -n;
+  for(;n;--n) lua_pushvalue(L, i);
 }
