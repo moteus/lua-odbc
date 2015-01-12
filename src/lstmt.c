@@ -326,16 +326,45 @@ static int stmt_prepare_ (lua_State *L, lodbc_stmt *stmt, const char *statement)
 
 //{ bind CallBack
 
-static int stmt_bind_number_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+static int stmt_bind_number_cb_pre_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
   SQLRETURN ret = par_init_cb(par, L, LODBC_NUMBER);
-  if(ret)
-    return ret;
-  par_data_settype(par,LODBC_NUMBER,LODBC_NUMBER_SIZE, LODBC_NUMBER_DIGEST, 0);
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, LODBC_C_NUMBER, par->sqltype, par->parsize, par->digest, (VOID *)par, 0, &par->ind);
+  if(ret) return ret;
+
+  par_data_settype(par, LODBC_NUMBER, LODBC_NUMBER_SIZE, LODBC_NUMBER_DIGEST, 0);
+  return 0;
+}
+
+#ifdef LODBC_USE_INTEGER
+static int stmt_bind_integer_cb_pre_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  SQLRETURN ret = par_init_cb(par, L, LODBC_INTEGER);
+  if(ret) return ret;
+
+  par_data_settype(par, LODBC_INTEGER, LODBC_INTEGER_SIZE, LODBC_INTEGER_DIGEST, 0);
+  return 0;
+}
+#else
+#  define stmt_bind_integer_cb_pre_ stmt_bind_number_cb_pre_
+#endif
+
+static int stmt_bind_number_cb_post_(lua_State *L, SQLSMALLINT ct, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, ct, par->sqltype, par->parsize, par->digest, (VOID *)par, 0, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
   return lodbc_pass(L);
 }
+
+static int stmt_bind_number_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  SQLRETURN ret = stmt_bind_number_cb_pre_(L, stmt, i, par);
+  if(ret)return ret;
+  return stmt_bind_number_cb_post_(L, LODBC_C_NUMBER, stmt, i, par);
+}
+
+static int stmt_bind_integer_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  SQLRETURN ret = stmt_bind_integer_cb_pre_(L, stmt, i, par);
+  if(ret)return ret;
+  return stmt_bind_number_cb_post_(L, LODBC_C_INTEGER, stmt, i, par);
+}
+
 
 static int stmt_bind_bool_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
   SQLRETURN ret = par_init_cb(par, L, SQL_BIT);
@@ -371,10 +400,8 @@ static int stmt_bind_binary_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, 
 
 //{ bind Data
 
-static int stmt_bind_number_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+static int stmt_bind_number_post_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
   SQLRETURN ret;
-  if(lua_isfunction(L,3))
-    return stmt_bind_number_cb_(L,stmt,i,par);
 
   #ifdef LODBC_USE_INTEGER
   if(lua_isinteger(L, 3)){
@@ -394,6 +421,30 @@ static int stmt_bind_number_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par
     return lodbc_fail(L, hSTMT, stmt->handle);
   
   return lodbc_pass(L);
+}
+
+static int stmt_bind_number_impl_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  SQLRETURN ret;
+  if(lua_isfunction(L,3))
+    return stmt_bind_number_cb_(L,stmt,i,par);
+
+  return stmt_bind_number_post_(L, stmt, i, par);
+}
+
+static int stmt_bind_integer_impl_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  SQLRETURN ret;
+  if(lua_isfunction(L,3))
+    return stmt_bind_integer_cb_(L,stmt,i,par);
+
+  return stmt_bind_number_post_(L, stmt, i, par);
+}
+
+static int stmt_bind_number_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  return stmt_bind_number_impl_(L, stmt, i, par);
+}
+
+static int stmt_bind_integer_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
+  return stmt_bind_integer_impl_(L, stmt, i, par);
 }
 
 static int stmt_bind_string_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
@@ -508,8 +559,8 @@ static int stmt_bind(lua_State *L){
 
     /* deal with data according to type */
     switch (type[1]) {
-      /* nUmber */
-      case 'u': return stmt_bind_number_(L,stmt,i,par);
+      /* nUmber iNteger*/
+      case 'u': case 'n': return stmt_bind_number_(L,stmt,i,par);
       /* bOol */
       case 'o': return stmt_bind_bool_(L,stmt,i,par);
       /* sTring */ 
@@ -524,6 +575,11 @@ static int stmt_bind(lua_State *L){
 static int stmt_bind_number(lua_State *L){
   CHECK_BIND_PARAM();
   return stmt_bind_number_(L,stmt,i,par);
+}
+
+static int stmt_bind_integer(lua_State *L){
+  CHECK_BIND_PARAM();
+  return stmt_bind_integer_(L,stmt,i,par);
 }
 
 static int stmt_bind_bool(lua_State *L){
@@ -1340,6 +1396,7 @@ static const struct luaL_Reg lodbc_stmt_methods[] = {
 
   {"bind",        stmt_bind},
   {"bindnum",     stmt_bind_number},
+  {"bindint",     stmt_bind_integer},
   {"bindstr",     stmt_bind_string},
   {"bindbin",     stmt_bind_binary},
   {"bindbool",    stmt_bind_bool},

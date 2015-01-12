@@ -190,10 +190,40 @@ static int lodbc_##T##_set(lua_State *L, lodbc_##T *val, int i, int opt){\
 }
 //}
 
+//{ make_integer_get_set
+#define make_integer_get_set(T, CT)                                 \
+                                                                    \
+static int lodbc_##T##_get(lua_State *L, lodbc_##T *val){           \
+  lua_pushinteger(L, (CT)val->data);                                \
+  return 1;                                                         \
+}                                                                   \
+                                                                    \
+static int lodbc_##T##_set(lua_State *L, lodbc_##T *val, int i, int opt){\
+  if(!opt){                                                         \
+    val->data = (CT)luaL_checkinteger(L, i);                        \
+    val->ind  = 0;                                                  \
+  }else if(lua_isnumber(L,i)){                                      \
+    val->data = (CT)lua_tointeger(L, 1);                            \
+    val->ind  = 0;                                                  \
+  }                                                                 \
+  return 0;                                                         \
+}
+//}
+
 //{ make_numeric_T
 #define make_numeric_T(T,CT) \
   make_fixsize_T(T,CT) \
   make_numeric_get_set(T,CT)
+//}
+
+//{ make_integer_T
+#ifdef LODBC_USE_INTEGER
+#  define make_integer_T(T,CT) \
+    make_fixsize_T(T,CT) \
+    make_integer_get_set(T,CT)
+#else
+#  define make_integer_T make_numeric_T(T,CT)
+#endif
 //}
 
 #define lodbc_utinyint_CTYPE SQL_C_UTINYINT
@@ -218,14 +248,14 @@ static int lodbc_##T##_set(lua_State *L, lodbc_##T *val, int i, int opt){\
 #define lodbc_float_STYPE    SQL_FLOAT
 #define lodbc_double_STYPE   SQL_DOUBLE
 
-make_numeric_T(ubigint,  SQLUBIGINT     )
-make_numeric_T(sbigint,  SQLBIGINT      )
-make_numeric_T(utinyint, SQLCHAR        )
-make_numeric_T(stinyint, SQLSCHAR       )
-make_numeric_T(ushort  , SQLUSMALLINT   )
-make_numeric_T(sshort  , SQLSMALLINT    )
-make_numeric_T(ulong   , SQLUINTEGER    )
-make_numeric_T(slong   , SQLINTEGER     )
+make_integer_T(ubigint,  SQLUBIGINT     )
+make_integer_T(sbigint,  SQLBIGINT      )
+make_integer_T(utinyint, SQLCHAR        )
+make_integer_T(stinyint, SQLSCHAR       )
+make_integer_T(ushort  , SQLUSMALLINT   )
+make_integer_T(sshort  , SQLSMALLINT    )
+make_integer_T(ulong   , SQLUINTEGER    )
+make_integer_T(slong   , SQLINTEGER     )
 make_numeric_T(float   , SQLFLOAT       )
 make_numeric_T(double  , SQLDOUBLE      )
 

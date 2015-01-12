@@ -222,7 +222,10 @@ local function BIND_CB(stmt)
   if HAS_GUID_TYPE then
     assert_true(stmt:bindstr    (i, get_uuid   ,#inGuidVal))          i = i + 1
   end
-  assert_true(stmt:bindnum    (i, get_bigint   ))                     i = i + 1
+
+  -- Use `bindint` instead of `bindnum` because there no way to detect value type
+  -- before execute so with callback we have to point value type explicity
+  assert_true(stmt:bindint    (i, get_bigint   ))                     i = i + 1
 end
 
 function test_1()
