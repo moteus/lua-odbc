@@ -335,6 +335,7 @@ static int stmt_bind_number_cb_pre_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT
 }
 
 #ifdef LODBC_USE_INTEGER
+
 static int stmt_bind_integer_cb_pre_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
   SQLRETURN ret = par_init_cb(par, L, LODBC_INTEGER);
   if(ret) return ret;
@@ -342,6 +343,7 @@ static int stmt_bind_integer_cb_pre_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLIN
   par_data_settype(par, LODBC_INTEGER, LODBC_INTEGER_SIZE, LODBC_INTEGER_DIGEST, 0);
   return 0;
 }
+
 #else
 #  define stmt_bind_integer_cb_pre_ stmt_bind_number_cb_pre_
 #endif
@@ -359,11 +361,17 @@ static int stmt_bind_number_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, 
   return stmt_bind_number_cb_post_(L, LODBC_C_NUMBER, stmt, i, par);
 }
 
+#ifdef LODBC_USE_INTEGER
+
 static int stmt_bind_integer_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
   SQLRETURN ret = stmt_bind_integer_cb_pre_(L, stmt, i, par);
   if(ret)return ret;
   return stmt_bind_number_cb_post_(L, LODBC_C_INTEGER, stmt, i, par);
 }
+
+#else
+#  define stmt_bind_integer_cb_ stmt_bind_number_cb_
+#endif
 
 
 static int stmt_bind_bool_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){

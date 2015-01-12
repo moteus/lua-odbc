@@ -93,15 +93,17 @@ local function EXEC_AND_ASSERT(qrySQL)
   outBoolVal,outGuidVal,outBigIntVal = stmt:fetch()
 
   if not PROC_SUPPORT_DEFAULT then
-    outBoolVal, outGuidVal = outDefaultVal, outBoolVal, outGuidVal 
-    outDefaultVal = "----"
+    outDefaultVal, outBoolVal, outGuidVal, outBigIntVal = "----", outDefaultVal, outBoolVal, outGuidVal
+  end
+
+  if not HAS_GUID_TYPE then
+    outGuidVal, outBigIntVal = nil, outGuidVal
   end
 
   local test_bin_val = inBinaryVal
   if DBMS == 'MySQL' then
     test_bin_val = inBinaryVal .. ('\0'):rep(#outBinaryVal - #inBinaryVal)
   end
-
 
   stmt:close()
 
@@ -116,6 +118,7 @@ local function EXEC_AND_ASSERT(qrySQL)
   -- print('DefaultVal =', outDefaultVal  )
   -- print('BoolVal    =', outBoolVal     )
   -- print('GuidVal    =', outGuidVal     )
+  -- print('BigIntVal  =', outBigIntVal   )
   -- print"================================="
 
   assert_equal(inIntVal    , outIntVal      )
@@ -202,7 +205,9 @@ local function BIND(stmt)
     assert_true(stmt:binddefault(i           )) i = i + 1
   end
   assert_true(stmt:bindbool   (i,inBoolVal   )) i = i + 1
-  assert_true(stmt:bindstr    (i,inGuidVal   )) i = i + 1
+  if HAS_GUID_TYPE then
+    assert_true(stmt:bindstr    (i,inGuidVal   )) i = i + 1
+  end
   assert_true(stmt:bindnum    (i,inBigIntVal )) i = i + 1
 end
 
@@ -300,17 +305,17 @@ function test_4()
 end
 
 function test_bind_value()
-  local vIntVal     = odbc.slong(-0x7FFFFFFF)
-  local vUIntVal    = odbc.ulong(0xFFFFFFFF)
-  local vDoubleVal  = odbc.double(1234.235664879123456)
-  local vStringVal  = odbc.char("Hello world")
-  local vBinaryVal  = odbc.binary("\000\001\002\003")
-  local vDateVal    = odbc.char("2011-01-01") -- sybase has error. for date : Cannot convert SQLDATETIME to a date
+  local vIntVal     = odbc.slong(inIntVal)
+  local vUIntVal    = odbc.ulong(inUIntVal)
+  local vDoubleVal  = odbc.double(inDoubleVal)
+  local vStringVal  = odbc.char(inStringVal)
+  local vBinaryVal  = odbc.binary(inBinaryVal)
+  local vDateVal    = odbc.char(inDateVal) -- sybase has error. for date : Cannot convert SQLDATETIME to a date
   local vNullVal    = odbc.utinyint()
-  local vDefaultVal = odbc.ulong(1234)
-  local vBoolVal    = odbc.bit(true)
-  local vGuidVal    = odbc.binary(x'B1BB49A2B4014413BEBB7ACD10399875')
-  local vBigIntVal  = odbc.sbigint(-0x7FFFFFFFFFFFFFFF)
+  local vDefaultVal = odbc.ulong(inDefaultVal)
+  local vBoolVal    = odbc.bit(inBoolVal)
+  local vGuidVal    = odbc.binary(x(inGuidVal))
+  local vBigIntVal  = odbc.sbigint(inBigIntVal)
 
   assert_boolean(proc_exists(cnn))
   assert(ensure_proc(cnn))
@@ -327,10 +332,12 @@ function test_bind_value()
   assert_equal(vDateVal    , vDateVal    :bind_param(stmt, i, odbc.PARAM_INPUT, odbc.DATE)) i = i + 1
   assert_equal(vNullVal    , vNullVal    :bind_param(stmt, i  )) i = i + 1
   if PROC_SUPPORT_DEFAULT then
-    assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, i  )) i = i + 1
+    assert_equal(vDefaultVal,vDefaultVal :bind_param(stmt, i  )) i = i + 1
   end
   assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, i  )) i = i + 1
-  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, i  )) i = i + 1
+  if HAS_GUID_TYPE then
+    assert_equal(vGuidVal  , vGuidVal    :bind_param(stmt, i  )) i = i + 1
+  end
   assert_equal(vBigIntVal  , vBigIntVal  :bind_param(stmt, i  )) i = i + 1
 
   EXEC_AND_ASSERT(TEST_PROC_CALL)
@@ -347,10 +354,12 @@ function test_bind_value()
   assert_equal(vDateVal    , vDateVal    :bind_param(stmt, i, odbc.PARAM_INPUT, odbc.DATE)) i = i + 1
   assert_equal(vNullVal    , vNullVal    :bind_param(stmt, i  )) i = i + 1
   if PROC_SUPPORT_DEFAULT then
-    assert_equal(vDefaultVal , vDefaultVal :bind_param(stmt, i  )) i = i + 1
+    assert_equal(vDefaultVal,vDefaultVal :bind_param(stmt, i  )) i = i + 1
   end
   assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, i  )) i = i + 1
-  assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, i  )) i = i + 1
+  if HAS_GUID_TYPE then
+    assert_equal(vGuidVal  , vGuidVal    :bind_param(stmt, i  )) i = i + 1
+  end
   assert_equal(vBigIntVal  , vBigIntVal  :bind_param(stmt, i  )) i = i + 1
 
   EXEC_AND_ASSERT()

@@ -222,7 +222,7 @@ static int lodbc_##T##_set(lua_State *L, lodbc_##T *val, int i, int opt){\
     make_fixsize_T(T,CT) \
     make_integer_get_set(T,CT)
 #else
-#  define make_integer_T make_numeric_T(T,CT)
+#  define make_integer_T(T,CT) make_numeric_T(T,CT)
 #endif
 //}
 
