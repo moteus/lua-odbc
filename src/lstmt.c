@@ -376,11 +376,23 @@ static int stmt_bind_number_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par
   if(lua_isfunction(L,3))
     return stmt_bind_number_cb_(L,stmt,i,par);
 
-  par_data_settype(par,LODBC_NUMBER,LODBC_NUMBER_SIZE, LODBC_NUMBER_DIGEST, 0);
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, LODBC_C_NUMBER, par->sqltype, par->parsize, par->digest, &par->value.numval, 0, NULL);
+  #ifdef LODBC_USE_INTEGER
+  if(lua_isinteger(L, 3)){
+    par_data_settype(par, LODBC_INTEGER, LODBC_INTEGER_SIZE, LODBC_INTEGER_DIGEST, 0);
+    par->value.intval = lua_tointeger(L,3);
+    ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, LODBC_C_INTEGER, par->sqltype, par->parsize, par->digest, &par->value.intval, 0, NULL);
+  }
+  else
+  #endif
+  {
+    par_data_settype(par,LODBC_NUMBER,LODBC_NUMBER_SIZE, LODBC_NUMBER_DIGEST, 0);
+    par->value.numval = luaL_checknumber(L,3);
+    ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, LODBC_C_NUMBER, par->sqltype, par->parsize, par->digest, &par->value.numval, 0, NULL);
+  }
+
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
-  par->value.numval = luaL_checknumber(L,3);
+  
   return lodbc_pass(L);
 }
 
@@ -431,7 +443,7 @@ static int stmt_bind_bool_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_d
   ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BIT, par->sqltype, 0, 0, &par->value.boolval, 0, NULL);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
-  par->value.boolval = lua_isboolean(L,3) ? lua_toboolean(L,3) : luaL_checkint(L,3);
+  par->value.boolval = lua_isboolean(L,3) ? lua_toboolean(L,3) : luaL_checkinteger(L,3);
   return lodbc_pass(L);
 }
 
@@ -442,7 +454,7 @@ static int stmt_bind_bool_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_d
 #define CHECK_BIND_PARAM() \
   lodbc_stmt *stmt = lodbc_getstmt(L);\
   par_data     *par = NULL;\
-  SQLUSMALLINT    i = luaL_checkint(L,2);\
+  SQLUSMALLINT    i = luaL_checkinteger(L,2);\
   if(i <= 0) return lodbc_faildirect(L, "invalid param index");\
   if((stmt->numpars>0) && (!stmt->par)){\
     int ret = create_parinfo(L, stmt);\
@@ -579,9 +591,19 @@ static int stmt_putparam_number_(lua_State *L, lodbc_stmt *stmt, par_data *par){
   int top = lua_gettop(L);
   if((ret = par_call_cb(par,L,0)))
     return ret;
-  par->value.numval = luaL_checknumber(L,-1);
+  #ifdef LODBC_USE_INTEGER
+  if(LT_INTEGER == lodbc_sqltypetolua(par->sqltype)){
+    par->value.intval = luaL_checkinteger(L,-1);
+    ret = SQLPutData(stmt->handle, &par->value.intval, sizeof(par->value.intval));
+  }
+  else
+  #endif
+  {
+    par->value.numval = luaL_checknumber(L,-1);
+    ret = SQLPutData(stmt->handle, &par->value.numval, sizeof(par->value.numval));
+  }
+
   lua_settop(L,top);
-  ret = SQLPutData(stmt->handle, &par->value.numval, sizeof(par->value.numval));
   if(lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
   return 0;
@@ -592,7 +614,7 @@ static int stmt_putparam_bool_(lua_State *L, lodbc_stmt *stmt, par_data *par){
   int top = lua_gettop(L);
   if((ret = par_call_cb(par,L,0)))
     return ret;
-  par->value.boolval = lua_isboolean(L,-1) ? lua_toboolean(L,-1) : luaL_checkint(L,-1);
+  par->value.boolval = lua_isboolean(L,-1) ? lua_toboolean(L,-1) : luaL_checkinteger(L,-1);
   lua_settop(L,top);
   ret = SQLPutData(stmt->handle, &par->value.boolval, sizeof(par->value.boolval));
   if(lodbc_iserror(ret))
@@ -604,8 +626,8 @@ static int stmt_putparam(lua_State *L, lodbc_stmt *stmt, par_data *par){
   const char *type = lodbc_sqltypetolua(par->sqltype);
   /* deal with data according to type */
   switch (type[1]) {
-    /* nUmber */
-    case 'u': return stmt_putparam_number_(L,stmt,par);
+    /* nUmber, iNteger */
+    case 'u': case 'n': return stmt_putparam_number_(L,stmt,par);
     /* bOol */
     case 'o': return stmt_putparam_bool_(L,stmt,par);
     /* sTring */ 

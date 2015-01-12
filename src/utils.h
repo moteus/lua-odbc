@@ -7,7 +7,8 @@ LODBC_INTERNAL extern const char
   *LT_STRING,
   *LT_NUMBER,
   *LT_BOOLEAN,
-  *LT_BINARY;
+  *LT_BINARY,
+  *LT_INTEGER;
 
 #if LODBC_ODBCVER >= 0x0300
 #   define LODBC_ODBC3_C(odbc3_value,old_value) odbc3_value

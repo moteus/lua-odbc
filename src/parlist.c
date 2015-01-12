@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "lerr.h"
 #include "parlist.h"
+#include "l52util.h"
 
 int par_data_setparinfo(par_data* par, lua_State *L, SQLHSTMT hstmt, SQLSMALLINT i){
 

@@ -9,7 +9,8 @@ const char
   *LT_NUMBER  = "number",
   *LT_BOOLEAN = "boolean",
   *LT_BINARY  = "binary",
-  *LT_WSTRING = "string";
+  *LT_WSTRING = "string",
+  *LT_INTEGER = "integer";
 
 static const char *LODBC_USER_VALUE = "User value storage";
 static const int LODBC_NULL_VALUE = -1;
@@ -109,17 +110,19 @@ int lodbc_issqltype (const SQLSMALLINT type) {
 */
 const char *lodbc_sqltypetolua (const SQLSMALLINT type) {
   switch (type) {
-    case SQL_UNKNOWN_TYPE: case SQL_CHAR: case SQL_VARCHAR: 
-    case SQL_TYPE_DATE: case SQL_TYPE_TIME: case SQL_TYPE_TIMESTAMP: 
-    case SQL_DATE: case SQL_INTERVAL: case SQL_TIMESTAMP: 
+    case SQL_UNKNOWN_TYPE: case SQL_CHAR: case SQL_VARCHAR:
+    case SQL_TYPE_DATE: case SQL_TYPE_TIME: case SQL_TYPE_TIMESTAMP:
+    case SQL_DATE: case SQL_INTERVAL: case SQL_TIMESTAMP:
     case SQL_LONGVARCHAR:
     case SQL_GUID:
       return LT_STRING;
 
     case SQL_NUMERIC: case SQL_DECIMAL: 
     case SQL_FLOAT: case SQL_REAL: case SQL_DOUBLE:
-    case SQL_BIGINT: case SQL_TINYINT: case SQL_INTEGER: case SQL_SMALLINT:
       return LT_NUMBER;
+
+    case SQL_BIGINT: case SQL_TINYINT: case SQL_INTEGER: case SQL_SMALLINT:
+      return LT_INTEGER;
 
     case SQL_INTERVAL_MONTH:          case SQL_INTERVAL_YEAR: 
     case SQL_INTERVAL_YEAR_TO_MONTH:  case SQL_INTERVAL_DAY:
@@ -128,13 +131,13 @@ const char *lodbc_sqltypetolua (const SQLSMALLINT type) {
     case SQL_INTERVAL_DAY_TO_MINUTE:  case SQL_INTERVAL_DAY_TO_SECOND:
     case SQL_INTERVAL_HOUR_TO_MINUTE: case SQL_INTERVAL_HOUR_TO_SECOND:
     case SQL_INTERVAL_MINUTE_TO_SECOND:  
-      return LT_NUMBER; // ???
+      return LT_INTEGER;
 
     case SQL_WCHAR: case SQL_WVARCHAR:case SQL_WLONGVARCHAR:
       return LT_WSTRING;
 
     case SQL_BINARY: case SQL_VARBINARY: case SQL_LONGVARBINARY:
-      return LT_BINARY;	/* !!!!!! nao seria string? */
+      return LT_BINARY;
 
     case SQL_BIT:
       return LT_BOOLEAN;
@@ -150,6 +153,17 @@ int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const 
   int top = lua_gettop(L);
 
   switch (type) {/* deal with data according to type */
+    case 'n': { /* iNteger */
+    #ifdef LODBC_USE_INTEGER
+      lua_Integer num;
+      SQLLEN got;
+      SQLRETURN rc = SQLGetData(hstmt, i, LODBC_C_INTEGER, &num, 0, &got);
+      if (lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
+      if (got == SQL_NULL_DATA) lodbc_pushnull(L);
+      else lua_pushinteger(L, num);
+      break;
+    #endif
+    }
     case 'u': { /* nUmber */
       lua_Number num;
       SQLLEN got;

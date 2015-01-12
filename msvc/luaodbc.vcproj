@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="luaodbc"
 	ProjectGUID="{BF27B87A-97F0-4802-90CD-987A3D84FD34}"
 	RootNamespace="luaodbc"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(LUA_DIR)\include&quot;;..\include"
+				AdditionalIncludeDirectories="&quot;$(LUA_DIR_5_3)\include&quot;;..\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LUAODBC_EXPORTS;LODBC_ERROR_AS_OBJECT;LODBC_CHECK_ERROR_ON_DESTROY"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,10 +62,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:luaopen_odbc=luaopen_lodbc /EXPORT:luaopen_odbc_core=luaopen_lodbc"
-				AdditionalDependencies="lua5.1.lib"
+				AdditionalDependencies="lua53.lib"
 				OutputFile="$(OutDir)\lodbc.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(LUA_DIR)\lib"
+				AdditionalLibraryDirectories="$(LUA_DIR_5_3)\lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"

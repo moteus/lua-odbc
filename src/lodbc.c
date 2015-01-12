@@ -31,9 +31,9 @@ LODBC_EXPORT int lodbc_statement(lua_State *L, SQLHSTMT hstmt, unsigned char own
 }
 
 static int lodbc_version_(lua_State *L){
-  lua_pushnumber(L, LODBC_VERSION_MAJOR);
-  lua_pushnumber(L, LODBC_VERSION_MINOR);
-  lua_pushnumber(L, LODBC_VERSION_PATCH);
+  lua_pushinteger(L, LODBC_VERSION_MAJOR);
+  lua_pushinteger(L, LODBC_VERSION_MINOR);
+  lua_pushinteger(L, LODBC_VERSION_PATCH);
 #ifdef LODBC_VERSION_COMMENT
   if(LODBC_VERSION_COMMENT[0]){
     lua_pushliteral(L, LODBC_VERSION_COMMENT);
@@ -44,11 +44,11 @@ static int lodbc_version_(lua_State *L){
 }
 
 static int lodbc_push_version(lua_State *L){
-  lua_pushnumber(L, LODBC_VERSION_MAJOR);
+  lua_pushinteger(L, LODBC_VERSION_MAJOR);
   lua_pushliteral(L, ".");
-  lua_pushnumber(L, LODBC_VERSION_MINOR);
+  lua_pushinteger(L, LODBC_VERSION_MINOR);
   lua_pushliteral(L, ".");
-  lua_pushnumber(L, LODBC_VERSION_PATCH);
+  lua_pushinteger(L, LODBC_VERSION_PATCH);
 #ifdef LODBC_VERSION_COMMENT
   if(LODBC_VERSION_COMMENT[0]){
     lua_pushliteral(L, "-"LODBC_VERSION_COMMENT);

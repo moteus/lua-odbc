@@ -10,6 +10,9 @@ typedef struct par_data{
       SQLULEN              bufsize;
     }          strval;
     lua_Number numval;
+    #ifdef LODBC_USE_INTEGER
+    lua_Integer intval;
+    #endif
     char       boolval;
   }                    value;
   SQLSMALLINT          sqltype;
