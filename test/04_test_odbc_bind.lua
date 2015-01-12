@@ -51,6 +51,7 @@ local inNullVal    = odbc.NULL
 local inDefaultVal = 1234
 local inBoolVal    = true
 local inGuidVal    = 'B1BB49A2B4014413BEBB7ACD10399875'
+local inBigIntVal  = -0x7FFFFFFFFFFFFFFF
 
 local function get_int()
   return inIntVal;
@@ -78,6 +79,9 @@ end
 local function get_uuid()
   return inGuidVal
 end
+local function get_bigint()
+  return inBigIntVal;
+end
 
 local function EXEC_AND_ASSERT(qrySQL)
   if qrySQL then assert_equal(stmt, stmt:execute(qrySQL))
@@ -86,7 +90,7 @@ local function EXEC_AND_ASSERT(qrySQL)
   assert_equal(1, stmt:rowcount())
   local outIntVal, outUIntVal, outDoubleVal, outStringVal,
   outBinaryVal, outDateVal, outNullVal, outDefaultVal,
-  outBoolVal,outGuidVal = stmt:fetch()
+  outBoolVal,outGuidVal,outBigIntVal = stmt:fetch()
 
   if not PROC_SUPPORT_DEFAULT then
     outBoolVal, outGuidVal = outDefaultVal, outBoolVal, outGuidVal 
@@ -128,6 +132,7 @@ local function EXEC_AND_ASSERT(qrySQL)
   if HAS_GUID_TYPE then
     assert_equal(inGuidVal   , outGuidVal     )
   end
+  assert_equal(inBigIntVal   , outBigIntVal     )
 end
 
 local function VEXEC_AND_ASSERT(qrySQL)
@@ -149,6 +154,7 @@ local function VEXEC_AND_ASSERT(qrySQL)
   local outGuidVal    if HAS_GUID_TYPE then
     outGuidVal    = assert( odbc.binary(#inGuidVal)   :bind_col(stmt, i ) ) i = i + 1
   end
+  local outBigIntVal  = assert( odbc.sbigint()            :bind_col(stmt, i ) ) i = i + 1
 
   assert_true(stmt:vfetch())
   stmt:close()
@@ -180,6 +186,7 @@ local function VEXEC_AND_ASSERT(qrySQL)
   if HAS_GUID_TYPE then
     assert_equal(x(inGuidVal), outGuidVal     :get())
   end
+  assert_equal(inBigIntVal   , outBigIntVal :get())
 end
 
 local function BIND(stmt)
@@ -196,6 +203,7 @@ local function BIND(stmt)
   end
   assert_true(stmt:bindbool   (i,inBoolVal   )) i = i + 1
   assert_true(stmt:bindstr    (i,inGuidVal   )) i = i + 1
+  assert_true(stmt:bindnum    (i,inBigIntVal )) i = i + 1
 end
 
 local function BIND_CB(stmt)
@@ -214,6 +222,7 @@ local function BIND_CB(stmt)
   if HAS_GUID_TYPE then
     assert_true(stmt:bindstr    (i, get_uuid   ,#inGuidVal))          i = i + 1
   end
+  assert_true(stmt:bindnum    (i, get_bigint   ))                     i = i + 1
 end
 
 function test_1()
@@ -245,7 +254,7 @@ function test_2()
   assert_true(stmt:prepared())
   local col = assert_table(stmt:colnames())
   local typ = assert_table(stmt:coltypes())
-  assert((stmt:parcount() == 10) or (stmt:parcount() == -1))
+  assert((stmt:parcount() == 11) or (stmt:parcount() == -1))
 
   BIND(stmt)
 
@@ -298,6 +307,7 @@ function test_bind_value()
   local vDefaultVal = odbc.ulong(1234)
   local vBoolVal    = odbc.bit(true)
   local vGuidVal    = odbc.binary(x'B1BB49A2B4014413BEBB7ACD10399875')
+  local vBigIntVal  = odbc.sbigint(-0x7FFFFFFFFFFFFFFF)
 
   assert_boolean(proc_exists(cnn))
   assert(ensure_proc(cnn))
@@ -318,6 +328,7 @@ function test_bind_value()
   end
   assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, i  )) i = i + 1
   assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vBigIntVal  , vBigIntVal  :bind_param(stmt, i  )) i = i + 1
 
   EXEC_AND_ASSERT(TEST_PROC_CALL)
   VEXEC_AND_ASSERT(TEST_PROC_CALL)
@@ -337,6 +348,7 @@ function test_bind_value()
   end
   assert_equal(vBoolVal    , vBoolVal    :bind_param(stmt, i  )) i = i + 1
   assert_equal(vGuidVal    , vGuidVal    :bind_param(stmt, i  )) i = i + 1
+  assert_equal(vBigIntVal  , vBigIntVal  :bind_param(stmt, i  )) i = i + 1
 
   EXEC_AND_ASSERT()
   VEXEC_AND_ASSERT()

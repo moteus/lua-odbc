@@ -50,7 +50,8 @@ local SYBASE9 = {
     in inNullVal    integer,
     in inDefaultVal integer default 1234,
     in inBitVal     bit,
-    in inGuidVal    uniqueidentifier
+    in inGuidVal    uniqueidentifier,
+    in inBigInt     bigint
   )
   BEGIN
     select 
@@ -63,7 +64,8 @@ local SYBASE9 = {
       inNullVal,
       inDefaultVal,
       inBitVal,
-      inGuidVal
+      inGuidVal,
+      inBigInt
   END]];
 
   TEST_PROC_DROP = "DROP PROCEDURE " .. TEST_PROC_NAME;
@@ -78,7 +80,8 @@ local SYBASE9 = {
     inNullVal=?,
     inDefaultVal=?,
     inBitVal=?,
-    inGuidVal=?
+    inGuidVal=?,
+    inBigInt=?
   )]];
 }
 
@@ -147,7 +150,8 @@ local MySQL = {
     in inBinaryVal  binary(50),
     in inDateVal    date,
     in inNullVal    integer,
-    in inBitVal     bit(1)
+    in inBitVal     bit(1),
+    in inBigInt     bigint
   )
   BEGIN
     select 
@@ -158,12 +162,13 @@ local MySQL = {
       inBinaryVal,
       inDateVal,
       inNullVal,
-      inBitVal;
+      inBitVal,
+      inBigInt;
   END]];
 
   TEST_PROC_DROP = 'DROP PROCEDURE ' .. TEST_PROC_NAME;
 
-  TEST_PROC_CALL = 'CALL ' .. TEST_PROC_NAME .. '(?, ?, ?, ?, ?, ?, ?, ?)';
+  TEST_PROC_CALL = 'CALL ' .. TEST_PROC_NAME .. '(?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
   TEST_PROC_CREATE_MULTI_RS = [[CREATE DEFINER=CURRENT_USER PROCEDURE ]] .. TEST_PROC_NAME .. [[()
   BEGIN 
