@@ -349,7 +349,7 @@ static int stmt_bind_integer_cb_pre_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLIN
 #endif
 
 static int stmt_bind_number_cb_post_(lua_State *L, SQLSMALLINT ct, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
-  SQLRETURN ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, ct, par->sqltype, par->parsize, par->digest, (VOID *)par, 0, &par->ind);
+  SQLRETURN ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, ct, par->sqltype, par->parsize, par->digest, (SQLPOINTER)par, 0, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
   return lodbc_pass(L);
@@ -378,7 +378,7 @@ static int stmt_bind_bool_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, pa
   SQLRETURN ret = par_init_cb(par, L, SQL_BIT);
   if(ret)
     return ret;
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BIT, par->sqltype, 0, 0, (VOID *)par, 0, &par->ind);
+  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BIT, par->sqltype, 0, 0, (SQLPOINTER)par, 0, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
   return lodbc_pass(L);
@@ -388,7 +388,7 @@ static int stmt_bind_string_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, 
   SQLRETURN ret = par_init_cb(par, L, SQL_CHAR);
   if(ret)
     return ret;
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_CHAR, par->sqltype, 0, 0, (VOID *)par, 0, &par->ind);
+  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_CHAR, par->sqltype, 0, 0, (SQLPOINTER)par, 0, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
   return lodbc_pass(L);
@@ -398,7 +398,7 @@ static int stmt_bind_binary_cb_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, 
   SQLRETURN ret = par_init_cb(par, L, SQL_BINARY);
   if(ret)
     return ret;
-  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BINARY, par->sqltype, 0, 0, (VOID *)par, 0, &par->ind);
+  ret = SQLBindParameter(stmt->handle, i, SQL_PARAM_INPUT, SQL_C_BINARY, par->sqltype, 0, 0, (SQLPOINTER)par, 0, &par->ind);
   if (lodbc_iserror(ret))
     return lodbc_fail(L, hSTMT, stmt->handle);
   return lodbc_pass(L);
