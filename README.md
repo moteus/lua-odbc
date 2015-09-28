@@ -12,6 +12,13 @@
 - luasql compatable module
 - C API to create Lua object based on existed ODBC handle
 
+## Known issues ##
+- assert method rise error as object.
+This works fine on Lua > 5.1 and on LuaJIT but on Lua 5.1 it results message as
+`lua.exe: (error object is not a string)`. But it allows wrap code
+in `pcall` function and handle errors as object(with access to SQLCODE and SQLSTATE).
+To change this behavior set `-DLODBC_ASSERT_TOSTRING` flag in compile time.
+
 ## Usage ##
 
 Insert multiple rows
