@@ -1,33 +1,43 @@
-language: erlang
+language: c
+
+sudo: required
+
+addons:
+  apt:
+    packages:
+      - unixodbc
+      - unixodbc-dev
+      - libmyodbc
+      - libsqliteodbc
 
 env:
   global:
-    - LUAROCKS=2.2.0
+    - LUAROCKS=2.3.0
     - LUAODBC_TEST_DBMS=MySQL
   matrix:
     - LUA=lua5.1
-    - LUA=lua5.2
-    - LUA=lua5.3
-    - LUA=luajit
+    # - LUA=lua5.2
+    # - LUA=lua5.3
+    # - LUA=luajit     # latest stable version (2.0.4)
+    # - LUA=luajit2.0  # current head of 2.0 branch
+    # - LUA=luajit2.1  # current head of 2.1 branch
 
 branches:
   only:
     - master
-    - gcc44
 
 before_install:
-  - bash .travis/setup_lua.sh
-  - sudo pip install cpp-coveralls
-  - sudo luarocks install luacov-coveralls
+  - source .travis/setenv_lua.sh
+  - pip install --user cpp-coveralls
+  - luarocks install luacov-coveralls
+  - luarocks install lunitx
   - mysql --version
   - mysql -e "create database IF NOT EXISTS test;" -uroot
-  - sudo apt-get install libmyodbc libsqliteodbc unixodbc unixodbc-dev
   - sudo odbcinst -i -d -f /usr/share/libmyodbc/odbcinst.ini
-  - sudo odbcinst -i -s -l -f ./test/mytest.odbc.ini
-  - sudo luarocks install lunitx
+  - odbcinst -i -s -h -f ./test/mytest.odbc.ini
 
 install:
-  - sudo luarocks make rockspec/odbc-scm-0.rockspec CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
+  - luarocks make rockspec/odbc-scm-0.rockspec CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
   - lua -e "odbc=require'odbc';odbc.environment():drivers(print)"
   - lua -e "odbc=require'odbc';odbc.environment():datasources(print)"
 
