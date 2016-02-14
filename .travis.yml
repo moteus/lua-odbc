@@ -49,6 +49,7 @@ script:
   - lua luasql/test-luasql.lua
 
 after_success:
+  - luarocks install luajson
   - coveralls -b .. -r .. --dump c.report.json
   - luacov-coveralls -j c.report.json
 
