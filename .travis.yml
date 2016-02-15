@@ -49,8 +49,8 @@ script:
   - lua luasql/test-luasql.lua
 
 after_success:
-  - coveralls -b .. -r .. --dump c.report.json
-  - luacov-coveralls -j c.report.json
+  - coveralls -b .. -r .. -e install --dump c.report.json
+  - luacov-coveralls -v -j c.report.json
 
 notifications:
   email:
