@@ -5,6 +5,8 @@ local math = require"math"
 
 local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
+local function SKIP(msg) return function() lunit.skip(msg) end end
+
 local arg = {...}
 
 local _ENV = TEST_CASE'Value test' do
@@ -112,7 +114,8 @@ end
 
 end
 
-local _ENV = TEST_CASE'integer type test' if math.type then
+local _ENV = TEST_CASE'integer type test' 
+if not math.type then test = SKIP("required Lua supported Integer type") else
 
 function test_bigint()
   local v = odbc.sbigint(0)

@@ -1,6 +1,8 @@
 require "config"
 require "tools"
 
+local math = require "math"
+
 local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
 local skip      = assert(lunit.skip)
@@ -39,7 +41,6 @@ local x = function(b)
     return string.char( tonumber(v, 16) )
   end))
 end
-
 
 local inIntVal     = -0x7FFFFFFF
 local inUIntVal    = 0xFFFFFFFF
@@ -135,7 +136,7 @@ local function EXEC_AND_ASSERT(qrySQL)
   if HAS_GUID_TYPE then
     assert_equal(inGuidVal   , outGuidVal     )
   end
-  assert_equal(inBigIntVal   , outBigIntVal     )
+  assert_equal(inBigIntVal , outBigIntVal   )
 end
 
 local function VEXEC_AND_ASSERT(qrySQL)
@@ -189,7 +190,7 @@ local function VEXEC_AND_ASSERT(qrySQL)
   if HAS_GUID_TYPE then
     assert_equal(x(inGuidVal), outGuidVal     :get())
   end
-  assert_equal(inBigIntVal   , outBigIntVal :get())
+  assert_equal(inBigIntVal , outBigIntVal   :get())
 end
 
 local function BIND(stmt)
@@ -298,9 +299,70 @@ function test_4()
 
   stmt = cnn:statement()
   assert_true(stmt:prepare(TEST_PROC_CALL))
-  
+
   BIND_CB(stmt)
   EXEC_AND_ASSERT()
+  assert_true(stmt:destroy())
+end
+
+function test_coltypes()
+  assert_boolean(proc_exists(cnn))
+  assert(ensure_proc(cnn))
+  assert_true(proc_exists(cnn))
+
+  stmt = cnn:statement()
+  assert_true(stmt:prepare(TEST_PROC_CALL))
+
+  local types = stmt:coltypes()
+  local int_name = math.type and 'integer' or 'number'
+
+  local i = 1
+  assert_equal(int_name,  types[i]) i = i + 1
+  assert_equal(int_name,  types[i]) i = i + 1
+  assert_equal('number',  types[i]) i = i + 1
+  assert_equal('string',  types[i]) i = i + 1
+  assert_equal('binary',  types[i]) i = i + 1
+  assert_equal('string',  types[i]) i = i + 1
+  assert_equal(int_name,  types[i]) i = i + 1
+  if PROC_SUPPORT_DEFAULT then
+  assert_equal(int_name,  types[i]) i = i + 1
+  end
+  assert_equal('boolean', types[i]) i = i + 1
+  if HAS_GUID_TYPE then
+  assert_equal('string',  types[i]) i = i + 1
+  end
+  assert_equal(int_name,  types[i]) i = i + 1
+
+  assert_true(stmt:destroy())
+end
+
+function test_colnames()
+  assert_boolean(proc_exists(cnn))
+  assert(ensure_proc(cnn))
+  assert_true(proc_exists(cnn))
+
+  stmt = cnn:statement()
+  assert_true(stmt:prepare(TEST_PROC_CALL))
+
+  local names = stmt:colnames()
+
+  local i = 1
+  assert_equal('inIntVal',     names[i]) i = i + 1
+  assert_equal('inUIntVal',    names[i]) i = i + 1
+  assert_equal('inDoubleVal',  names[i]) i = i + 1
+  assert_equal('inStringVal',  names[i]) i = i + 1
+  assert_equal('inBinaryVal',  names[i]) i = i + 1
+  assert_equal('inDateVal',    names[i]) i = i + 1
+  assert_equal('inNullVal',    names[i]) i = i + 1
+  if PROC_SUPPORT_DEFAULT then
+  assert_equal('inDefaultVal', names[i]) i = i + 1
+  end
+  assert_equal('inBitVal',     names[i]) i = i + 1
+  if HAS_GUID_TYPE then
+  assert_equal('inGuidVal',    names[i]) i = i + 1
+  end
+  assert_equal('inBigInt',     names[i]) i = i + 1
+
   assert_true(stmt:destroy())
 end
 
@@ -371,3 +433,14 @@ end
 end
 
 local_run_test(arg)
+
+
+
+
+
+
+
+
+
+
+
