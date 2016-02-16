@@ -248,14 +248,26 @@ static int lodbc_##T##_set(lua_State *L, lodbc_##T *val, int i, int opt){\
 #define lodbc_float_STYPE    SQL_FLOAT
 #define lodbc_double_STYPE   SQL_DOUBLE
 
+#if defined(LODBC_INT_SIZE_64)
 make_integer_T(ubigint,  SQLUBIGINT     )
 make_integer_T(sbigint,  SQLBIGINT      )
-make_integer_T(utinyint, SQLCHAR        )
-make_integer_T(stinyint, SQLSCHAR       )
-make_integer_T(ushort  , SQLUSMALLINT   )
-make_integer_T(sshort  , SQLSMALLINT    )
+#else
+make_numeric_T(ubigint,  SQLUBIGINT     )
+make_numeric_T(sbigint,  SQLBIGINT      )
+#endif
+
+#if defined(LODBC_INT_SIZE_32)
 make_integer_T(ulong   , SQLUINTEGER    )
 make_integer_T(slong   , SQLINTEGER     )
+#else
+make_numeric_T(ulong   , SQLUINTEGER    )
+make_numeric_T(slong   , SQLINTEGER     )
+#endif
+
+make_integer_T(ushort  , SQLUSMALLINT   )
+make_integer_T(sshort  , SQLSMALLINT    )
+make_integer_T(utinyint, SQLCHAR        )
+make_integer_T(stinyint, SQLSCHAR       )
 make_numeric_T(float   , SQLFLOAT       )
 make_numeric_T(double  , SQLDOUBLE      )
 

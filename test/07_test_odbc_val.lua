@@ -1,11 +1,13 @@
 require "config"
 require "tools"
 
+local math = require"math"
+
 local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
 local arg = {...}
 
-local _ENV = TEST_CASE'Value test'
+local _ENV = TEST_CASE'Value test' do
 
 function setup()
 end
@@ -42,8 +44,8 @@ local tsize = {
 function test_ctor()
   local val;
   for i, tname in ipairs(types)do 
-    val = odbc[tname]()    assert_true(val:is_null())
-    val = odbc[tname](nil) assert_true(val:is_null())
+    val = odbc[tname]()    assert_true(val:is_null(), "Type is " .. tname)
+    val = odbc[tname](nil) assert_true(val:is_null(), "Type is " .. tname)
     if(tname ~= 'bit')then
       assert_error('fail empty assign to ' .. tname, function() val:set() end)
       assert_error('fail nil   assign to ' .. tname, function() val:set(nil) end)
@@ -108,7 +110,33 @@ function test_timestamp()
   assert_equal("1995-03-02 07:09:05", val:get())
 end
 
-local _ENV = TEST_CASE'Select into value test'
+end
+
+local _ENV = TEST_CASE'integer type test' if math.type then
+
+function test_bigint()
+  local v = odbc.sbigint(0)
+  assert_equal('integer', math.type(v:get()))
+end
+
+function test_long()
+  local v = odbc.slong(0)
+  assert_equal('integer', math.type(v:get()))
+end
+
+function test_short()
+  local v = odbc.sshort(0)
+  assert_equal('integer', math.type(v:get()))
+end
+
+function test_tinyint()
+  local v = odbc.stinyint(0)
+  assert_equal('integer', math.type(v:get()))
+end
+
+end
+
+local _ENV = TEST_CASE'Select into value test' do
 
 local TEST_ROWS = 1
 local env, cnn, stmt
@@ -174,5 +202,6 @@ function test_overflow()
   assert_equal(subStr, strVal:get())
 end
 
+end
 
 local_run_test(arg)

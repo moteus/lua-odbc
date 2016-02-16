@@ -121,7 +121,17 @@ const char *lodbc_sqltypetolua (const SQLSMALLINT type) {
     case SQL_FLOAT: case SQL_REAL: case SQL_DOUBLE:
       return LT_NUMBER;
 
-    case SQL_BIGINT: case SQL_TINYINT: case SQL_INTEGER: case SQL_SMALLINT:
+  case SQL_INTEGER:
+#ifndef LODBC_INT_SIZE_32
+      return LT_NUMBER;
+#endif
+
+  case SQL_BIGINT: 
+#ifndef LODBC_INT_SIZE_64
+      return LT_NUMBER;
+#endif
+
+    case SQL_TINYINT: case SQL_SMALLINT:
       return LT_INTEGER;
 
     case SQL_INTERVAL_MONTH:          case SQL_INTERVAL_YEAR: 
@@ -147,7 +157,6 @@ const char *lodbc_sqltypetolua (const SQLSMALLINT type) {
 
   }
 }
-
 
 int lodbc_push_column_value(lua_State *L, SQLHSTMT hstmt, SQLUSMALLINT i, const char type){
   int top = lua_gettop(L);
@@ -247,7 +256,6 @@ int lodbc_push_column(lua_State *L, int coltypes, const SQLHSTMT hstmt, SQLUSMAL
   lua_pop(L, 1); /* pops type name */
   return lodbc_push_column_value(L,hstmt,i,type);
 }
-
 
 typedef SQLRETURN (SQL_API*get_attr_ptr)(SQLHANDLE, SQLUSMALLINT, SQLPOINTER);
 typedef SQLRETURN (SQL_API*set_attr_ptr)(SQLHANDLE, SQLUSMALLINT, SQLULEN);

@@ -58,6 +58,17 @@
 
 #endif
 
+#ifdef LODBC_USE_INTEGER
+#  ifdef LUA_32BITS
+#    define LODBC_INT_SIZE_16
+#    define LODBC_INT_SIZE_32
+#  else
+#    define LODBC_INT_SIZE_16
+#    define LODBC_INT_SIZE_32
+#    define LODBC_INT_SIZE_64
+#  endif
+#endif
+
 #ifndef LODBC_C_NUMBER
 #  if defined LUA_NUMBER_DOUBLE
 #    define LODBC_C_NUMBER SQL_C_DOUBLE

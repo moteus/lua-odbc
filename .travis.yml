@@ -29,7 +29,7 @@ branches:
 before_install:
   - source .travis/setenv_lua.sh
   - pip install --user cpp-coveralls
-  - luarocks install luacov-coveralls --server=https://luarocks.org/dev
+  - luarocks install luacov-coveralls
   - luarocks install lunitx
   - mysql --version
   - mysql -e "create database IF NOT EXISTS test;" -uroot
