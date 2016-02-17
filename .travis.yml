@@ -1,6 +1,6 @@
 language: c
 
-sudo: required
+sudo: false
 
 addons:
   apt:
@@ -9,6 +9,11 @@ addons:
       - unixodbc-dev
       - libmyodbc
       - libsqliteodbc
+      - odbc-postgresql
+
+services:
+  - postgresql
+  - mysql
 
 env:
   global:
@@ -16,9 +21,9 @@ env:
     - LUAODBC_TEST_DBMS=MySQL
   matrix:
     - LUA=lua5.1
-    - LUA=lua5.2
-    - LUA=lua5.3
-    - LUA=luajit     # latest stable version (2.0.4)
+    # - LUA=lua5.2
+    # - LUA=lua5.3
+    # - LUA=luajit     # latest stable version (2.0.4)
     # - LUA=luajit2.0  # current head of 2.0 branch
     # - LUA=luajit2.1  # current head of 2.1 branch
 
@@ -33,19 +38,30 @@ before_install:
   - luarocks install lunitx
   - mysql --version
   - mysql -e "create database IF NOT EXISTS test;" -uroot
+  - psql --version
+  - psql -c "create database test;" -U postgres
+  - cp ./test/.odbcinst.ini /home/travis
+  - odbcinst -i -s -h -f ./test/mytest.odbc.ini
+  - odbcinst -i -s -h -f ./test/pgtest.odbc.ini
+  - echo "select 'hello'" | isql MySQL-test -b
+  - echo "select 'hello'" | isql PgSQL-test -b
 
 install:
   - luarocks make rockspec/odbc-scm-0.rockspec CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
   - lua -e "odbc=require'odbc';odbc.environment():drivers(print)"
-  - sudo odbcinst -i -d -f /usr/share/libmyodbc/odbcinst.ini
-  - lua -e "odbc=require'odbc';odbc.environment():drivers(print)"
-  - odbcinst -i -s -h -f ./test/mytest.odbc.ini
   - lua -e "odbc=require'odbc';odbc.environment():datasources(print)"
+  - lua -e "odbc=require'odbc';print(odbc.connect('MySQL-test','postgres',''))"
+  - lua -e "odbc=require'odbc';print(odbc.driverconnect'Driver=MySQL;db=test;uid=root')"
+  - lua -e "odbc=require'odbc';print(odbc.connect('PgSQL-test','postgres',''))"
+  - lua -e "odbc=require'odbc';print(odbc.driverconnect'Driver=PostgreSQL ANSI;Server=localhost;Port=5432;Database=test;Uid=postgres')"
 
 script:
   - cd test/dba
   - lunit.sh test.lua
   - cd .. 
+  - lunit.sh test.lua
+  - lua luasql/test-luasql.lua
+  - LUAODBC_TEST_DBMS=PgSQL
   - lunit.sh test.lua
   - lua luasql/test-luasql.lua
 

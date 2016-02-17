@@ -146,6 +146,10 @@ local env, cnn, stmt
 local TEST_BIN_VAL  = ("\0"):rep(50)
 local TEST_STR_VAL = ("A"):rep(50)
 
+if DBMS == 'PgSQL' then
+TEST_BIN_VAL = TEST_STR_VAL
+end
+
 local function fin_table()
   assert_equal(DROP_TABLE_RETURN_VALUE, drop_table(cnn))
   assert_false(table_exists(cnn))
@@ -159,7 +163,11 @@ local function init_table()
   assert_true(cnn:setautocommit(false))
   assert_true(stmt:prepare("insert into " .. TEST_TABLE_NAME .. "(f1,f2) values(?,?)"))
   for i = 1, TEST_ROWS do
-    assert_true(stmt:bindbin(1, TEST_BIN_VAL))
+    if DBMS == 'PgSQL' then
+      assert_true(stmt:bindstr(1, TEST_BIN_VAL))
+    else
+      assert_true(stmt:bindbin(1, TEST_BIN_VAL))
+    end
     assert_true(stmt:bindstr(2, TEST_STR_VAL))
     assert_equal(1, stmt:execute())
     assert_true(stmt:closed())
@@ -191,6 +199,9 @@ end
 
 function test_overflow()
   local binVal = assert_userdata(odbc.binary(10):bind_col(stmt, 1))
+  if DBMS == 'PgSQL' then
+    binVal = assert_userdata(odbc.char(10):bind_col(stmt, 1))
+  end
   local strVal = assert_userdata(odbc.char(10):bind_col(stmt, 2))
 
   assert_equal(stmt, stmt:execute("select f1, f2 from " .. TEST_TABLE_NAME))

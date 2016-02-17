@@ -3,9 +3,13 @@ require "tools"
 
 local local_run_test = lunit and function() end or run_test
 local lunit = require "lunit"
+local function SKIP(msg) return function() lunit.skip(msg) end end
+
 local arg = {...}
 
 local _ENV = TEST_CASE'Statement multi resultset'
+if DBMS == 'PgSQL' then test = SKIP(DBMS .. " does not support batch query")
+else
 
 local env, cnn, stmt
 
@@ -108,6 +112,8 @@ function test_prepared()
   assert_true(stmt:prepare(sql))
   FETCH_AND_ASSERT( assert(stmt:execute()) )
   stmt:destroy()
+end
+
 end
 
 local_run_test(arg)

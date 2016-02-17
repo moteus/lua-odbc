@@ -1,5 +1,6 @@
 # ODBC library for Lua 5.1/5.2 #
 
+[![Licence](http://img.shields.io/badge/Licence-MIT-brightgreen.svg)](LICENCE.txt)
 [![Build Status](https://travis-ci.org/moteus/lua-odbc.png?branch=master)](https://travis-ci.org/moteus/lua-odbc)
 [![Coverage Status](https://coveralls.io/repos/moteus/lua-odbc/badge.png?branch=master)](https://coveralls.io/r/moteus/lua-odbc?branch=master)
 
