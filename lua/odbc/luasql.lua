@@ -1,10 +1,14 @@
 local odbc = require "odbc.core"
 
-luasql = (type(luasql) == 'table') and luasql or {
+local luasql = (type(luasql) == 'table') and luasql or {
   _COPYRIGHT   = "Copyright (C) 2006-2012 Kepler Project";
   _DESCRIPTION = "LuaSQL is a simple interface from Lua to a DBMS";
   _VERSION     = "LuaSQL 2.2.1";
 }
+
+if _VERSION == 'Lua 5.1' then
+  _G.luasql = luasql
+end
 
 local Environment = {__metatable = "LuaSQL: you're not allowed to get this metatable"} Environment.__index = Environment
 local Connection  = {__metatable = "LuaSQL: you're not allowed to get this metatable"} Connection.__index = Connection
@@ -98,7 +102,10 @@ function Connection:execute(sql)
   local stmt, err = self.private_.cnn:statement()
   if not stmt then return nil, err end
   local ok ok,err = stmt:execute(sql)
-  if not ok then return nil, err end
+  if not ok then
+    stmt:destroy()
+    return nil, err
+  end
   if stmt:closed() then
     stmt:destroy()
     return ok

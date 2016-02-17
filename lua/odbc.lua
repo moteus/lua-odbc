@@ -76,11 +76,17 @@ function Connection:execute(sql)
   local stmt, err = self:statement()
   if not stmt then return nil, err end
   local ok, err = stmt:execute(sql)
-  if not ok then 
+
+  -- returns not recordset so we do not need statement
+  if ok ~= stmt then
     stmt:destroy()
+  end
+
+  if not ok then
     return nil, err
   end
-  return stmt
+    
+  return ok
 end
 
 end
