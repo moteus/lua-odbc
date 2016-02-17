@@ -50,7 +50,7 @@ install:
   - luarocks make rockspec/odbc-scm-0.rockspec CFLAGS="-O2 -fPIC -ftest-coverage -fprofile-arcs" LIBFLAG="-shared --coverage";
   - lua -e "odbc=require'odbc';odbc.environment():drivers(print)"
   - lua -e "odbc=require'odbc';odbc.environment():datasources(print)"
-  - lua -e "odbc=require'odbc';print(odbc.connect('MySQL-test','postgres',''))"
+  - lua -e "odbc=require'odbc';print(odbc.connect('MySQL-test','root',''))"
   - lua -e "odbc=require'odbc';print(odbc.driverconnect'Driver=MySQL;db=test;uid=root')"
   - lua -e "odbc=require'odbc';print(odbc.connect('PgSQL-test','postgres',''))"
   - lua -e "odbc=require'odbc';print(odbc.driverconnect'Driver=PostgreSQL ANSI;Server=localhost;Port=5432;Database=test;Uid=postgres')"
