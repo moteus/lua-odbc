@@ -1,6 +1,6 @@
 language: c
 
-sudo: true
+sudo: false
 
 addons:
   apt:
@@ -18,12 +18,11 @@ services:
 env:
   global:
     - LUAROCKS=2.3.0
-    - LUAODBC_TEST_DBMS=MySQL
   matrix:
     - LUA=lua5.1
-    # - LUA=lua5.2
-    # - LUA=lua5.3
-    # - LUA=luajit     # latest stable version (2.0.4)
+    - LUA=lua5.2
+    - LUA=lua5.3
+    - LUA=luajit     # latest stable version (2.0.4)
     # - LUA=luajit2.0  # current head of 2.0 branch
     # - LUA=luajit2.1  # current head of 2.1 branch
 
@@ -41,7 +40,6 @@ before_install:
   - psql --version
   - psql -c "create database test;" -U postgres
   - cp ./test/.odbcinst.ini $HOME
-  - sudo cat /usr/share/libmyodbc/odbcinst.ini
   - odbcinst -i -s -h -f ./test/mytest.odbc.ini
   - odbcinst -i -s -h -f ./test/pgtest.odbc.ini
   - echo "select 'hello'" | isql MySQL-test -b
@@ -60,11 +58,12 @@ script:
   - cd test/dba
   - lunit.sh test.lua
   - cd .. 
+  - LUAODBC_TEST_DBMS=MySQL
   - lunit.sh test.lua
   - lua luasql/test-luasql.lua
-  - LUAODBC_TEST_DBMS=PgSQL
-  - lunit.sh test.lua
-  - lua luasql/test-luasql.lua
+  # - LUAODBC_TEST_DBMS=PgSQL
+  # - lunit.sh test.lua
+  # - lua luasql/test-luasql.lua
 
 after_success:
   - coveralls -b .. -r .. -e install --dump c.report.json

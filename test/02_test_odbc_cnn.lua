@@ -117,4 +117,12 @@ function test_connection_counter()
   test()
 end
 
+function test_tostring()
+  assert_match("Connection", tostring(cnn))
+  assert_not_match("closed", tostring(cnn))
+  cnn:destroy()
+  assert_match("Connection", tostring(cnn))
+  assert_match("closed", tostring(cnn))
+end
+
 local_run_test(arg)

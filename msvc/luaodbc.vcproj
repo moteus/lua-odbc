@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(LUA_DIR_5_3)\include&quot;;..\include"
+				AdditionalIncludeDirectories="&quot;$(LUA_DIR)\include&quot;;..\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LUAODBC_EXPORTS;LODBC_ERROR_AS_OBJECT;LODBC_CHECK_ERROR_ON_DESTROY"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,10 +62,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:luaopen_odbc=luaopen_lodbc /EXPORT:luaopen_odbc_core=luaopen_lodbc"
-				AdditionalDependencies="lua53.lib"
+				AdditionalDependencies="lua5.1.lib"
 				OutputFile="$(OutDir)\lodbc.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(LUA_DIR_5_3)\lib"
+				AdditionalLibraryDirectories="$(LUA_DIR)\lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"

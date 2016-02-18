@@ -97,4 +97,13 @@ function test_statement_counter()
   test()
 end
 
+function test_tostring()
+  stmt = cnn:statement()
+  assert_match("Statement", tostring(stmt))
+  assert_not_match("closed", tostring(stmt))
+  stmt:destroy()
+  assert_match("Statement", tostring(stmt))
+  assert_match("closed", tostring(stmt))
+end
+
 local_run_test(arg)

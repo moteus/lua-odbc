@@ -381,7 +381,29 @@ static int env_connection_count(lua_State *L){
   return 1;
 }
 
+static int env_tostring (lua_State *L) {
+  char status[16];
+  char self[65];
+
+  lodbc_env *env = (lodbc_env *)lutil_checkudatap (L, 1, LODBC_ENV);
+  luaL_argcheck (L, env != NULL, 1, LODBC_PREFIX "environment expected");
+
+  if(env->flags & LODBC_FLAG_DESTROYED){
+    strcpy (status, "[closed] ");
+  }
+  else{
+    status[0] = '\0';
+  }
+
+  sprintf (self, "%p", (void *)env);
+
+  lua_pushfstring (L, "%s %s(%s)", LODBC_ENV, status, self);
+  return 1;
+}
+
 static const struct luaL_Reg lodbc_env_methods[] = {
+  {"__tostring", env_tostring},
+
   {"__gc",       env_destroy},
   {"destroy",    env_destroy},
   {"destroyed",  env_closed},

@@ -75,4 +75,12 @@ function test_uservalue()
   assert_nil(ptr.value)
 end
 
+function test_tostring()
+  assert_match("Environment", tostring(env))
+  assert_not_match("closed", tostring(env))
+  env:destroy()
+  assert_match("Environment", tostring(env))
+  assert_match("closed", tostring(env))
+end
+
 local_run_test(arg)

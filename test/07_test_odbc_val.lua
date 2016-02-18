@@ -112,6 +112,15 @@ function test_timestamp()
   assert_equal("1995-03-02 07:09:05", val:get())
 end
 
+function test_tostring()
+  local val;
+  for i, tname in ipairs(types)do 
+    val = odbc[tname]()
+    assert_match("Value", tostring(val))
+    assert_match(tname, tostring(val))
+  end
+end
+
 end
 
 local _ENV = TEST_CASE'integer type test' 

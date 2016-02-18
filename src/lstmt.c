@@ -432,17 +432,15 @@ static int stmt_bind_number_post_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i
 }
 
 static int stmt_bind_number_impl_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
-  SQLRETURN ret;
   if(lua_isfunction(L,3))
-    return stmt_bind_number_cb_(L,stmt,i,par);
+    return stmt_bind_number_cb_(L,stmt, i, par);
 
   return stmt_bind_number_post_(L, stmt, i, par);
 }
 
 static int stmt_bind_integer_impl_(lua_State *L, lodbc_stmt *stmt, SQLUSMALLINT i, par_data *par){
-  SQLRETURN ret;
   if(lua_isfunction(L,3))
-    return stmt_bind_integer_cb_(L,stmt,i,par);
+    return stmt_bind_integer_cb_(L, stmt, i, par);
 
   return stmt_bind_number_post_(L, stmt, i, par);
 }
@@ -1381,7 +1379,29 @@ static int stmt_get_asyncmode(lua_State *L){
 
 //}
 
+static int stmt_tostring (lua_State *L) {
+  char status[16];
+  char self[65];
+
+  lodbc_stmt * stmt= (lodbc_stmt *)lutil_checkudatap (L, 1, LODBC_STMT);
+  luaL_argcheck (L, stmt != NULL, 1, LODBC_PREFIX "statement expected");
+
+  if(stmt->flags & LODBC_FLAG_DESTROYED){
+    strcpy (status, "[closed] ");
+  }
+  else{
+    status[0] = '\0';
+  }
+
+  sprintf (self, "%p", (void *)stmt);
+
+  lua_pushfstring (L, "%s %s(%s)", LODBC_STMT, status, self);
+  return 1;
+}
+
 static const struct luaL_Reg lodbc_stmt_methods[] = {
+  {"__tostring", stmt_tostring},
+
   {"__gc",      stmt_destroy},
   {"destroy",   stmt_destroy},
   {"destroyed", stmt_destroyed},
