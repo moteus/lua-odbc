@@ -18,6 +18,7 @@ services:
 env:
   global:
     - LUAROCKS=2.3.0
+    - LUAODBC_TEST_DBMS=MySQL
   matrix:
     - LUA=lua5.1
     - LUA=lua5.2
@@ -58,7 +59,6 @@ script:
   - cd test/dba
   - lunit.sh test.lua
   - cd .. 
-  - LUAODBC_TEST_DBMS=MySQL
   - lunit.sh test.lua
   - lua luasql/test-luasql.lua
   # - LUAODBC_TEST_DBMS=PgSQL
