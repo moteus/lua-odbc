@@ -102,7 +102,11 @@ function proc_exists(cnn)
 end
 
 function create_proc (cnn)
-  return exec_ddl(cnn, TEST_PROC_CREATE)
+  print("*****************************")
+  print(TEST_PROC_CREATE)
+  local ok, err = exec_ddl(cnn, TEST_PROC_CREATE)
+  print(ok, err)
+  return ok, err
 end
 
 function drop_proc(cnn)

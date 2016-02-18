@@ -1,6 +1,6 @@
 language: c
 
-sudo: false
+sudo: true
 
 addons:
   apt:
@@ -40,7 +40,8 @@ before_install:
   - mysql -e "create database IF NOT EXISTS test;" -uroot
   - psql --version
   - psql -c "create database test;" -U postgres
-  - cp ./test/.odbcinst.ini /home/travis
+  - cp ./test/.odbcinst.ini $HOME
+  - sudo cat /usr/share/libmyodbc/odbcinst.ini
   - odbcinst -i -s -h -f ./test/mytest.odbc.ini
   - odbcinst -i -s -h -f ./test/pgtest.odbc.ini
   - echo "select 'hello'" | isql MySQL-test -b
