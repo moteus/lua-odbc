@@ -13,11 +13,11 @@ const char
   *LT_INTEGER = "integer";
 
 static const char *LODBC_USER_VALUE = "User value storage";
+/*
 static const int LODBC_NULL_VALUE = -1;
-
-#ifndef LODBC_USE_NULL_AS_NIL
 const int *LODBC_NULL = &LODBC_NULL_VALUE;
-#endif
+*/
+const int *LODBC_NULL = NULL;
 
 void lodbc_stackdump( lua_State* L ) {
   int top= lua_gettop(L);
@@ -420,7 +420,10 @@ void lodbc_pushnull(lua_State*L){
 }
 
 int lodbc_isnull(lua_State*L, int idx){
-  return (lua_touserdata(L, idx) == LODBC_NULL)?1:0;
+  if(lua_islightuserdata(L, idx)){
+    return lua_touserdata(L, idx) == (void*)LODBC_NULL?1:0;
+  }
+  return 0;
 }
 
 #endif
