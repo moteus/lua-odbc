@@ -59,12 +59,36 @@ build = {
       defines = {
         'UNIXODBC';
         'LUAODBC_EXPORTS';
+
+        -- Configuration behavior
+        -- return object as error instead of just string
         'LODBC_ERROR_AS_OBJECT';
+
+        -- odbc.assert call tostring function to second arg before raise error
+        -- it may sense most for Lua 5.1 because it does not produce correct message.
+        -- Lua > 5.1 call tostring in case for error byself
+        -- 'LODBC_ASSERT_TOSTRING';
+
+        -- return NULL value as `nil` instead of odbc.NULL
+        -- 'LODBC_USE_NULL_AS_NIL';
+
+        -- check return codes from SQLClose.
+        -- It really not very useful because usially we really can not do anything.
+        -- 'LODBC_CHECK_ERROR_ON_DESTROY';
+
+        -- Perfomance/memory usage options
         'LODBC_MIN_PAR_BUFSIZE=64';
         -- 'LODBC_FREE_PAR_AT_CLEAR';
         -- 'LODBC_USE_LUA_REGISTRY';
+
+        -- Use pointer to userdata as lightuserdata as key for `uservalue`.
+        -- In other case use userdata as key and we have to create separate
+        -- weak table to allow remove value by gc and do one additional table lookup
+        -- It is not documented that Lua preserve constant pointer 
+        -- for userdata but it is true for all current implementation 
+        -- And Lua developers do not going to implement movable GC
+        -- I test it with (Lua 5.1, 5.2, 5.3, JIT)
         -- 'LODBC_USE_UDPTR_AS_KEY';
-        -- 'LODBC_USE_NULL_AS_NIL';
       };
       incdirs = {"./include","$(ODBC_INCDIR)"},
       libdirs = {"$(ODBC_LIBDIR)"},
