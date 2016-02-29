@@ -9,11 +9,8 @@ local utils = require "odbc.dba.utils"
 local unpack       = utils.unpack;
 local pack_n       = utils.pack_n;
 local unpack_n     = utils.unpack_n;
-local ifind        = utils.ifind;
 local collect      = utils.collect;
-local make_cahe    = utils.make_cahe;
 local throw        = utils.throw;
-local E            = utils.E;
 local ERROR        = utils.ERROR;
 local param_utils  = utils.param_utils;
 local user_val     = utils.user_val;
@@ -279,7 +276,7 @@ end
 function Connection:apply_params(sql, params)
   assert(type(sql)    == "string")
   assert(type(params) == "table" )
-  return param_utils.apply_params(self, sql, params)
+  return param_utils.apply_params(self, sql, params, odbc.PARAM_NULL, odbc.PARAM_DEFAULT)
 end
 
 function Connection:execute(sql, params)

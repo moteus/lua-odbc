@@ -130,8 +130,6 @@ local ERROR = {
   unknown_txn_lvl      = E'unknown transaction level: '; 
 };
 
-test_error()
-
 -------------------------------------------------------------------------------
 local param_utils = {} do
 --
@@ -171,7 +169,7 @@ function param_utils.str2sql(v, q) return param_utils.quoted(v, q or "'") end
 -- @param params   - таблица значений параметров
 -- @return         - новый текст запроса
 --
-function param_utils.apply_params(cnn, sql, params)
+function param_utils.apply_params(cnn, sql, params, null, default)
   params = params or {}
   local q = cnn and stringQuoteChar(cnn) or "'"
 
@@ -182,8 +180,8 @@ function param_utils.apply_params(cnn, sql, params)
     if    ("number"      == tv)then return param_utils.num2sql (v)
     elseif("string"      == tv)then return param_utils.str2sql (v, q)
     elseif("boolean"     == tv)then return param_utils.bool2sql(v)
-    elseif(PARAM_NULL    ==  v)then return 'NULL'
-    elseif(PARAM_DEFAULT ==  v)then return 'DEFAULT'
+    elseif(null          ==  v)then return 'NULL'
+    elseif(default       ==  v)then return 'DEFAULT'
     end
     err = ERROR.unknown_parameter .. param
   end)
@@ -246,4 +244,5 @@ return {
   param_utils  = param_utils;
   user_val     = user_val;
   set_user_val = set_user_val;
+  throw        = throw;
 }

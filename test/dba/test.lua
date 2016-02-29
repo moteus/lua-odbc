@@ -378,6 +378,7 @@ end
 function teardown()
   if qry then qry:destroy() end
   if cnn then cnn:destroy() end
+  qry, cnn = nil
 end
 
 function test_interface()
@@ -895,6 +896,14 @@ function test_fetch_all()
   end
   assert_true(qry:destroy())
 
+end
+
+function test_replace_string()
+  local sql = 'select :NAME'
+  assert_equal("select NULL",    cnn:apply_params(sql, {NAME=dba.PARAM_NULL}))
+  assert_equal("select DEFAULT", cnn:apply_params(sql, {NAME=dba.PARAM_DEFAULT}))
+  assert_equal("select 1",       cnn:apply_params(sql, {NAME=1}))
+  assert_equal("select '1'",     cnn:apply_params(sql, {NAME="1"}))
 end
 
 end
