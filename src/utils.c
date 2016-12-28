@@ -61,7 +61,7 @@ int lodbc_is_fail(lua_State *L, int nresult){
 // no result or error
 int lodbc_is_unknown(lua_State *L, int nresult){
   if(nresult == 0)return 1;
-  return (lua_type(L, nresult) == LUA_TNIL);
+  return (lua_type(L, -nresult) == LUA_TNIL);
 }
 
 /*
