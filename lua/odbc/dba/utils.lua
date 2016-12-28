@@ -139,7 +139,7 @@ local param_utils = {} do
 --
 -- паттерн для происка именованных параметров в запросе
 --
-param_utils.param_pattern = "[:]([^%d%s][%a%d_]+)"
+param_utils.param_pattern = "%f[%a%d:][:]([%a][%a%d_]*)"
 
 --
 -- заключает строку в ковычки
