@@ -1,5 +1,5 @@
 name = "odbc"
-version = "0.3.0"
+version = "0.3.1"
 
 desc = "ODBC library for Lua"
 author = "Alexey Melnichuk"
