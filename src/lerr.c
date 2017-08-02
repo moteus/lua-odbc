@@ -17,26 +17,28 @@ int lodbc_push_diagnostics_obj(lua_State *L, const SQLSMALLINT type, const SQLHA
   SQLRETURN ret;
   SQLCHAR Msg[SQL_MAX_MESSAGE_LENGTH];
 
-  lua_newtable(L);
   i = 1;
   while (1) {
     ret = SQLGetDiagRec(type, handle, i, State, &NativeError, Msg, sizeof(Msg), &MsgSize);
     if (ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) break;
+    if (i == 1) lua_newtable(L); 
     lua_newtable(L);
     lua_pushlstring(L, (char*)Msg, MsgSize); lua_setfield(L, -2, "message");
     lua_pushlstring(L, (char*)State, 5);     lua_setfield(L, -2, "state");
-    lua_pushnumber(L, NativeError);   lua_setfield(L, -2, "code");
+    lua_pushnumber(L, NativeError);          lua_setfield(L, -2, "code");
     lua_rawseti(L,-2, i);
     i++;
   }
+  if(i == 1) return 0;
+
+  lutil_setmetatablep(L, LODBC_ERR);
+
   return 1;
 }
 
 int lodbc_fail_obj(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle){
   lua_pushnil(L);
-  lodbc_push_diagnostics_obj(L, type, handle);
-  lutil_setmetatablep(L, LODBC_ERR);
-  return 2;
+  return 1 + lodbc_push_diagnostics_obj(L, type, handle);
 }
 
 int lodbc_faildirect_obj(lua_State *L, const char *err){
@@ -60,25 +62,25 @@ int lodbc_push_diagnostics_str(lua_State *L, const SQLSMALLINT type, const SQLHA
   SQLCHAR Msg[SQL_MAX_MESSAGE_LENGTH];
   luaL_Buffer b;
 
-  luaL_buffinit(L, &b);
   i = 1;
   while (1) {
     ret = SQLGetDiagRec(type, handle, i, State, &NativeError, Msg, sizeof(Msg), &MsgSize);
     if (ret == LODBC_ODBC3_C(SQL_NO_DATA,SQL_NO_DATA_FOUND)) break;
-    if(i > 1) luaL_addchar(&b, '\n');
+    if(i == 1) luaL_buffinit(L, &b); else luaL_addchar(&b, '\n');
     luaL_addlstring(&b, (char*)Msg, MsgSize);
     luaL_addchar(&b, '\n');
     luaL_addlstring(&b, (char*)State, 5);
     i++;
   }
+  if(i == 1) return 0;
+
   luaL_pushresult(&b);
   return 1;
 }
 
 int lodbc_fail_str(lua_State *L, const SQLSMALLINT type, const SQLHANDLE handle){
   lua_pushnil(L);
-  lodbc_push_diagnostics_str(L, type, handle);
-  return 2;
+  return 1 + lodbc_push_diagnostics_str(L, type, handle);
 }
 
 int lodbc_faildirect_str(lua_State *L, const char *err){

@@ -724,7 +724,7 @@ static int stmt_vfetch (lua_State *L) {
   } else if(rc == SQL_STILL_EXECUTING){
     lua_pushliteral(L, "timeout");
     stmt->aflags = LODBC_ASTATE_FETCH;
-    return 1;
+    return 1 + lodbc_push_diagnostics(L, hSTMT, hstmt);
   }else if(lodbc_iserror(rc)) return lodbc_fail(L, hSTMT, hstmt);
 
   lua_pushboolean(L,1);
@@ -1021,7 +1021,7 @@ static int stmt_execute(lua_State *L){
     if(ret == SQL_STILL_EXECUTING){
       stmt->aflags = LODBC_ASTATE_EXECUTE;
       lua_pushliteral(L,"timeout");
-      return 1;
+      return 1 + lodbc_push_diagnostics(L, hSTMT, stmt->handle);
     }
 
     if(
@@ -1051,7 +1051,7 @@ static int stmt_execute(lua_State *L){
     if(ret == SQL_STILL_EXECUTING){
       stmt->aflags = LODBC_ASTATE_PARAMDATA;
       lua_pushliteral(L,"timeout");
-      return 1;
+      return 1 + lodbc_push_diagnostics(L, hSTMT, stmt->handle);
     }
     if(
       (lodbc_iserror(ret))&&
@@ -1156,7 +1156,7 @@ static int stmt_moreresults(lua_State *L){
   if(ret == SQL_STILL_EXECUTING){
     stmt->aflags = LODBC_ASTATE_NEXTRS;
     lua_pushliteral(L, "timeout");
-    return 1;
+    return 1 + lodbc_push_diagnostics(L, hSTMT, stmt->handle);
   }
   if(lodbc_iserror(ret)) return lodbc_fail(L, hSTMT, stmt->handle);
 
