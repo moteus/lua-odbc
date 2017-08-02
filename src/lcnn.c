@@ -775,7 +775,7 @@ static int cnn_get_uint16_info(lua_State*L){
 static int cnn_get_uint32_info(lua_State*L){
   lodbc_cnn *cnn = lodbc_getcnn (L);
   SQLUSMALLINT optnum = luaL_checkinteger(L,2);
-  return cnn_get_uint16_info_(L, cnn, optnum);
+  return cnn_get_uint32_info_(L, cnn, optnum);
 }
 
 static int cnn_get_str_info(lua_State*L){
