@@ -55,7 +55,7 @@ void lodbc_stackdump( lua_State* L ) {
 
 int lodbc_is_fail(lua_State *L, int nresult){
   if(nresult == 0)return 0;
-  return (lua_type(L, nresult) == LUA_TNIL);
+  return (lua_type(L, -nresult) == LUA_TNIL);
 }
 
 // no result or error
