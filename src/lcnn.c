@@ -1312,6 +1312,14 @@ DEFINE_GET_STRING_INFO(getSearchStringEscape,
   SQL_SEARCH_PATTERN_ESCAPE
 )
 
+#ifdef SQL_MAX_ASYNC_CONCURRENT_STATEMENTS
+
+DEFINE_GET_UINT32_INFO(getMaxAsyncConcurrentStatements,
+  SQL_MAX_ASYNC_CONCURRENT_STATEMENTS
+)
+
+#endif
+
 static int cnn_getNumericFunctions(lua_State *L){
   static struct {
     SQLUINTEGER funcId;
@@ -2431,6 +2439,9 @@ static const struct luaL_Reg lodbc_cnn_methods[] = {
   {"stringFunctions",                           cnn_getStringFunctions},
   {"systemFunctions",                           cnn_getSystemFunctions},
   {"timeDateFunctions",                         cnn_getTimeDateFunctions},
+#ifdef SQL_MAX_ASYNC_CONCURRENT_STATEMENTS
+  {"maxAsyncConcurrentStatements",              cnn_getMaxAsyncConcurrentStatements },
+#endif
   {"supportsCatalogsInDataManipulation",        cnn_supportsCatalogsInDataManipulation},
   {"supportsCatalogsInProcedureCalls",          cnn_supportsCatalogsInProcedureCalls},
   {"supportsCatalogsInTableDefinitions",        cnn_supportsCatalogsInTableDefinitions},
