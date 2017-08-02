@@ -572,10 +572,10 @@ static SQLLEN lodbc_char_ind(lodbc_char *val){
 
 static int lodbc_char_get_value(lua_State *L){
   lodbc_char *val = lodbc_value(L, lodbc_char);
-  SQLULEN ind = lodbc_char_ind(val);
+  SQLLEN ind = lodbc_char_ind(val);
   if   (ind == SQL_NULL_DATA) lodbc_pushnull(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
-  else lua_pushlstring(L, (char*)val->data, val->ind);
+  else lua_pushlstring(L, (char*)val->data, ind);
   return 1;
 }
 
@@ -615,14 +615,14 @@ static int lodbc_char_length(lua_State *L){
 
 static int lodbc_char_is_null(lua_State *L){
   lodbc_char *val = lodbc_value(L, lodbc_char);
-  SQLULEN ind = lodbc_char_ind(val);
+  SQLLEN ind = lodbc_char_ind(val);
   lua_pushboolean(L, (ind == SQL_NULL_DATA)?1:0);
   return 1;
 }
 
 static int lodbc_char_is_default(lua_State *L){
   lodbc_char *val = lodbc_value(L, lodbc_char);
-  SQLULEN ind = lodbc_char_ind(val);
+  SQLLEN ind = lodbc_char_ind(val);
   lua_pushboolean(L, (ind == SQL_DEFAULT_PARAM)?1:0);
   return 1;
 }
@@ -750,10 +750,10 @@ static SQLLEN lodbc_binary_ind(lodbc_binary *val){
 
 static int lodbc_binary_get_value(lua_State *L){
   lodbc_binary *val = lodbc_value(L, lodbc_binary);
-  SQLULEN ind = lodbc_binary_ind(val);
+  SQLLEN ind = lodbc_binary_ind(val);
   if   (ind == SQL_NULL_DATA) lodbc_pushnull(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
-  else lua_pushlstring(L, (char*)val->data, val->ind);
+  else lua_pushlstring(L, (char*)val->data, ind);
   return 1;
 }
 
@@ -793,14 +793,14 @@ static int lodbc_binary_length(lua_State *L){
 
 static int lodbc_binary_is_null(lua_State *L){
   lodbc_binary *val = lodbc_value(L, lodbc_binary);
-  SQLULEN ind = lodbc_binary_ind(val);
+  SQLLEN ind = lodbc_binary_ind(val);
   lua_pushboolean(L, (ind == SQL_NULL_DATA)?1:0);
   return 1;
 }
 
 static int lodbc_binary_is_default(lua_State *L){
   lodbc_binary *val = lodbc_value(L, lodbc_binary);
-  SQLULEN ind = lodbc_binary_ind(val);
+  SQLLEN ind = lodbc_binary_ind(val);
   lua_pushboolean(L, (ind == SQL_DEFAULT_PARAM)?1:0);
   return 1;
 }
@@ -932,10 +932,10 @@ static SQLLEN lodbc_wchar_ind(lodbc_wchar *val){
 
 static int lodbc_wchar_get_value(lua_State *L){
   lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
-  SQLULEN ind = lodbc_wchar_ind(val);
+  SQLLEN ind = lodbc_wchar_ind(val);
   if   (ind == SQL_NULL_DATA) lodbc_pushnull(L);
   else if(ind == SQL_DEFAULT) lua_pushnil(L);
-  else lua_pushlstring(L, (const char*)&val->data[0], val->ind);
+  else lua_pushlstring(L, (const char*)&val->data[0], ind);
   return 1;
 }
 
@@ -978,14 +978,14 @@ static int lodbc_wchar_length(lua_State *L){
 
 static int lodbc_wchar_is_null(lua_State *L){
   lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
-  SQLULEN ind = lodbc_wchar_ind(val);
+  SQLLEN ind = lodbc_wchar_ind(val);
   lua_pushboolean(L, (ind == SQL_NULL_DATA)?1:0);
   return 1;
 }
 
 static int lodbc_wchar_is_default(lua_State *L){
   lodbc_wchar *val = lodbc_value(L, lodbc_wchar);
-  SQLULEN ind = lodbc_wchar_ind(val);
+  SQLLEN ind = lodbc_wchar_ind(val);
   lua_pushboolean(L, (ind == SQL_DEFAULT_PARAM)?1:0);
   return 1;
 }
