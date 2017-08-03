@@ -27,18 +27,31 @@ typedef struct lodbc_base_value_t{
 
 static int lodbc_value_tostring_impl(lua_State *L, void *ptr, const char*NAME) {
   lodbc_base_value_t *val = (lodbc_base_value_t*)ptr;
-  char self[65];
-  sprintf (self, "%p", (void *)val);
 
   if((val->ind == SQL_NULL_DATA) || (val->ind == SQL_DEFAULT)){
-    lua_pushfstring (L, "%sValue [%s][%s] (%s)", LODBC_PREFIX, NAME, 
-      (val->ind == SQL_NULL_DATA)?"NULL":"DEFAULT", self
+    lua_pushfstring (L, "%sValue [%s][%s] (%p)", LODBC_PREFIX, NAME, 
+      (val->ind == SQL_NULL_DATA)?"NULL":"DEFAULT", ptr
     );
   }
   else{
-    lua_pushfstring (L, "%sValue [%s][%d] (%s)", LODBC_PREFIX, NAME, 
-      (lua_Integer)val->ind, self
-    );
+#if LUA_VERSION_NUM >= 503 /* Lua 5.3 */
+    if(sizeof(SQLLEN) <= sizeof(int)){
+      lua_pushfstring (L, "%sValue [%s][%I] (%p)", LODBC_PREFIX, NAME, 
+        (lua_Integer)val->ind, ptr
+      );
+    }
+    else
+#endif
+    if(sizeof(SQLLEN) <= sizeof(int)){
+      lua_pushfstring (L, "%sValue [%s][%d] (%p)", LODBC_PREFIX, NAME, 
+        (int)val->ind, ptr
+      );
+    }
+    else{
+      lua_pushfstring (L, "%sValue [%s][%f] (%p)", LODBC_PREFIX, NAME,
+        (lua_Number)val->ind, ptr
+      );
+    }
   }
 
   return 1;
